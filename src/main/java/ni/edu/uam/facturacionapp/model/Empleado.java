@@ -1,22 +1,17 @@
 package ni.edu.uam.facturacionapp.model;
 
+import lombok.*;
 import java.time.LocalDate;
 
-import lombok.*;
-@Getter
-@Setter
-@NoArgsContructor
-@AllArgsContructor
-
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Empleado {
     private Integer id;
-    private String nombre;
-    private String apellido;
+    private String nombres;
+    private String apellidos;
     private Cargo cargo;
-    private LocalDate fechaContrato;
-
-
-
-    }
-
+    private LocalDate fechaContratacion;
+    private boolean activo;
+}
 

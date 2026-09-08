@@ -1,21 +1,18 @@
 package ni.edu.uam.facturacionapp.model;
 
-import jdk.jfr.DataAmount;
 import lombok.*;
 import java.math.BigDecimal;
 
-@DataAmount
-@NoArgsContructor
-@AllArgsContructor
-@Setter
-
-
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Producto {
     private Integer id;
     private String codigo;
     private String nombre;
-    private String categoria;
-    private BigDecimal precioventa;
-
-    }
+    private Categoria categoria;
+    private BigDecimal precioVenta;
+    private int existencia;
+    private String rutaImagen;
+    private boolean activo;
 }
