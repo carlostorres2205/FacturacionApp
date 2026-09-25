@@ -69,19 +69,28 @@ public class ProductoController {
 
     private void cargarCategorias() {
 
-        List<Categoria> categorias =
-                categoriaDAO.listar();
+        List<Categoria> categorias = categoriaDAO.listar();
+
+        if (categorias.isEmpty()) {
+
+            crearCategoriasIniciales();
+
+            categorias = categoriaDAO.listar();
+        }
 
         cbCategoria.getItems().clear();
-
-        cbCategoria.getItems().addAll(
-                categorias
-        );
+        cbCategoria.getItems().addAll(categorias);
 
         if (categorias.isEmpty()) {
 
             lblEstado.setText(
                     "No hay categorías registradas."
+            );
+
+        } else {
+
+            lblEstado.setText(
+                    "Categorías cargadas correctamente."
             );
         }
     }
@@ -483,5 +492,48 @@ public class ProductoController {
         lblEstado.setText(
                 mensaje
         );
+    }
+    private void crearCategoriasIniciales() {
+
+        Categoria electronica =
+                new Categoria(
+                        null,
+                        "Electrónica",
+                        true
+                );
+
+        Categoria alimentos =
+                new Categoria(
+                        null,
+                        "Alimentos",
+                        true
+                );
+
+        Categoria limpieza =
+                new Categoria(
+                        null,
+                        "Limpieza",
+                        true
+                );
+
+        Categoria hogar =
+                new Categoria(
+                        null,
+                        "Hogar",
+                        true
+                );
+
+        Categoria oficina =
+                new Categoria(
+                        null,
+                        "Oficina",
+                        true
+                );
+
+        categoriaDAO.guardar(electronica);
+        categoriaDAO.guardar(alimentos);
+        categoriaDAO.guardar(limpieza);
+        categoriaDAO.guardar(hogar);
+        categoriaDAO.guardar(oficina);
     }
 }

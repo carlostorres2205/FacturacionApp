@@ -13,7 +13,7 @@ public class FacturacionApplication extends Application{
 
         FXMLLoader fxmlLoader = new FXMLLoader(
                 FacturacionApplication.class.getResource(
-                        "login-view.fxml"
+                        "/ni/edu/uam/facturacionapp/fxml/login-view.fxml"
                 )
         );
 
