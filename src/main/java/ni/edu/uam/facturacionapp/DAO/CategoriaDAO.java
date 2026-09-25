@@ -1,18 +1,13 @@
 package ni.edu.uam.facturacionapp.DAO;
 
 import ni.edu.uam.facturacionapp.model.Categoria;
+import ni.edu.uam.facturacionapp.util.conexionBD;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class CategoriaDAO {
-    private final Connection conexion;
-
-    public CategoriaDAO(Connection conexion) {
-        this.conexion = conexion;
-    }
-
     public boolean guardar(Categoria categoria) {
 
         String sql = """
@@ -20,22 +15,35 @@ public class CategoriaDAO {
                 VALUES (?, ?)
                 """;
 
-        try (PreparedStatement ps = conexion.prepareStatement(
-                sql,
-                Statement.RETURN_GENERATED_KEYS
-        )) {
+        try (
+                Connection conexion = conexionBD.getConnection();
 
-            ps.setString(1, categoria.getNombre());
-            ps.setBoolean(2, categoria.isActiva());
+                PreparedStatement ps = conexion.prepareStatement(
+                        sql,
+                        Statement.RETURN_GENERATED_KEYS
+                )
+        ) {
 
-            int filas = ps.executeUpdate();
+            ps.setString(
+                    1,
+                    categoria.getNombre()
+            );
 
-            if (filas > 0) {
+            ps.setBoolean(
+                    2,
+                    categoria.isActiva()
+            );
+
+            int filasAfectadas = ps.executeUpdate();
+
+            if (filasAfectadas > 0) {
 
                 try (ResultSet rs = ps.getGeneratedKeys()) {
 
                     if (rs.next()) {
-                        categoria.setId(rs.getInt(1));
+                        categoria.setId(
+                                rs.getInt(1)
+                        );
                     }
                 }
 
@@ -49,9 +57,11 @@ public class CategoriaDAO {
         return false;
     }
 
+
     public List<Categoria> listar() {
 
-        List<Categoria> categorias = new ArrayList<>();
+        List<Categoria> categorias =
+                new ArrayList<>();
 
         String sql = """
                 SELECT id, nombre, activa
@@ -59,12 +69,21 @@ public class CategoriaDAO {
                 ORDER BY id
                 """;
 
-        try (PreparedStatement ps = conexion.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (
+                Connection conexion =
+                        conexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql);
+
+                ResultSet rs =
+                        ps.executeQuery()
+        ) {
 
             while (rs.next()) {
 
-                Categoria categoria = new Categoria();
+                Categoria categoria =
+                        new Categoria();
 
                 categoria.setId(
                         rs.getInt("id")
@@ -88,6 +107,7 @@ public class CategoriaDAO {
         return categorias;
     }
 
+
     public Categoria buscar(Integer id) {
 
         String sql = """
@@ -96,7 +116,13 @@ public class CategoriaDAO {
                 WHERE id = ?
                 """;
 
-        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+        try (
+                Connection conexion =
+                        conexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
 
             ps.setInt(1, id);
 
@@ -104,7 +130,8 @@ public class CategoriaDAO {
 
                 if (rs.next()) {
 
-                    Categoria categoria = new Categoria();
+                    Categoria categoria =
+                            new Categoria();
 
                     categoria.setId(
                             rs.getInt("id")
@@ -129,6 +156,7 @@ public class CategoriaDAO {
         return null;
     }
 
+
     public boolean actualizar(Categoria categoria) {
 
         String sql = """
@@ -138,7 +166,13 @@ public class CategoriaDAO {
                 WHERE id = ?
                 """;
 
-        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+        try (
+                Connection conexion =
+                        conexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
 
             ps.setString(
                     1,
@@ -164,6 +198,7 @@ public class CategoriaDAO {
         return false;
     }
 
+
     public boolean eliminar(Integer id) {
 
         String sql = """
@@ -171,7 +206,13 @@ public class CategoriaDAO {
                 WHERE id = ?
                 """;
 
-        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+        try (
+                Connection conexion =
+                        conexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
 
             ps.setInt(1, id);
 

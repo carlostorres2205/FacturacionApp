@@ -2,18 +2,13 @@ package ni.edu.uam.facturacionapp.DAO;
 
 import ni.edu.uam.facturacionapp.model.Categoria;
 import ni.edu.uam.facturacionapp.model.Producto;
+import ni.edu.uam.facturacionapp.util.conexionBD;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ProductoDAO {
-    private final Connection conexion;
-
-    public ProductoDAO(Connection conexion) {
-        this.conexion = conexion;
-    }
-
     public boolean guardar(Producto producto) {
 
         String sql = """
@@ -30,10 +25,16 @@ public class ProductoDAO {
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
 
-        try (PreparedStatement ps = conexion.prepareStatement(
-                sql,
-                Statement.RETURN_GENERATED_KEYS
-        )) {
+        try (
+                Connection conexion =
+                        conexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(
+                                sql,
+                                Statement.RETURN_GENERATED_KEYS
+                        )
+        ) {
 
             ps.setString(
                     1,
@@ -70,14 +71,19 @@ public class ProductoDAO {
                     producto.isActivo()
             );
 
-            int filas = ps.executeUpdate();
+            int filasAfectadas =
+                    ps.executeUpdate();
 
-            if (filas > 0) {
+            if (filasAfectadas > 0) {
 
-                try (ResultSet rs = ps.getGeneratedKeys()) {
+                try (ResultSet rs =
+                             ps.getGeneratedKeys()) {
 
                     if (rs.next()) {
-                        producto.setId(rs.getInt(1));
+
+                        producto.setId(
+                                rs.getInt(1)
+                        );
                     }
                 }
 
@@ -91,9 +97,11 @@ public class ProductoDAO {
         return false;
     }
 
+
     public List<Producto> listar() {
 
-        List<Producto> productos = new ArrayList<>();
+        List<Producto> productos =
+                new ArrayList<>();
 
         String sql = """
                 SELECT
@@ -113,8 +121,16 @@ public class ProductoDAO {
                 ORDER BY p.id
                 """;
 
-        try (PreparedStatement ps = conexion.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (
+                Connection conexion =
+                        conexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql);
+
+                ResultSet rs =
+                        ps.executeQuery()
+        ) {
 
             while (rs.next()) {
 
@@ -130,6 +146,7 @@ public class ProductoDAO {
 
         return productos;
     }
+
 
     public Producto buscar(Integer id) {
 
@@ -151,13 +168,21 @@ public class ProductoDAO {
                 WHERE p.id = ?
                 """;
 
-        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+        try (
+                Connection conexion =
+                        conexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
 
             ps.setInt(1, id);
 
-            try (ResultSet rs = ps.executeQuery()) {
+            try (ResultSet rs =
+                         ps.executeQuery()) {
 
                 if (rs.next()) {
+
                     return construirProducto(rs);
                 }
             }
@@ -168,6 +193,7 @@ public class ProductoDAO {
 
         return null;
     }
+
 
     public boolean actualizar(Producto producto) {
 
@@ -183,7 +209,13 @@ public class ProductoDAO {
                 WHERE id = ?
                 """;
 
-        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+        try (
+                Connection conexion =
+                        conexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
 
             ps.setString(
                     1,
@@ -234,6 +266,7 @@ public class ProductoDAO {
         return false;
     }
 
+
     public boolean eliminar(Integer id) {
 
         String sql = """
@@ -241,7 +274,13 @@ public class ProductoDAO {
                 WHERE id = ?
                 """;
 
-        try (PreparedStatement ps = conexion.prepareStatement(sql)) {
+        try (
+                Connection conexion =
+                        conexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
 
             ps.setInt(1, id);
 
@@ -254,10 +293,13 @@ public class ProductoDAO {
         return false;
     }
 
-    private Producto construirProducto(ResultSet rs)
-            throws SQLException {
 
-        Categoria categoria = new Categoria();
+    private Producto construirProducto(
+            ResultSet rs
+    ) throws SQLException {
+
+        Categoria categoria =
+                new Categoria();
 
         categoria.setId(
                 rs.getInt("categoria_id")
@@ -272,7 +314,8 @@ public class ProductoDAO {
         );
 
 
-        Producto producto = new Producto();
+        Producto producto =
+                new Producto();
 
         producto.setId(
                 rs.getInt("id")
