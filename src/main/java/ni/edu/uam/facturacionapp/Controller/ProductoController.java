@@ -7,6 +7,7 @@ import ni.edu.uam.facturacionapp.DAO.CategoriaDAO;
 import ni.edu.uam.facturacionapp.DAO.ProductoDAO;
 import ni.edu.uam.facturacionapp.model.Categoria;
 import ni.edu.uam.facturacionapp.model.Producto;
+import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -44,6 +45,27 @@ public class ProductoController {
     @FXML
     private Label lblEstado;
 
+    @FXML
+    private TableView<Producto> tvProductos;
+
+    @FXML
+    private TableColumn<Producto, String> colCodigo;
+
+    @FXML
+    private TableColumn<Producto, String> colNombre;
+
+    @FXML
+    private TableColumn<Producto, String> colCategoria;
+
+    @FXML
+    private TableColumn<Producto, BigDecimal> colPrecio;
+
+    @FXML
+    private TableColumn<Producto, Integer> colExistencia;
+
+    @FXML
+    private TableColumn<Producto, Boolean> colActivo;
+
 
     private final CategoriaDAO categoriaDAO =
             new CategoriaDAO();
@@ -56,6 +78,11 @@ public class ProductoController {
     public void initialize() {
 
         cargarCategorias();
+        cargarCategorias();
+
+        configurarTabla();
+
+        cargarProductos();
 
         chkActivo.setSelected(true);
     }
@@ -297,6 +324,7 @@ public class ProductoController {
                                 Alert.AlertType.INFORMATION
                         );
 
+
                 alerta.setTitle(
                         "Producto guardado"
                 );
@@ -317,6 +345,7 @@ public class ProductoController {
                 lblEstado.setText(
                         "Producto guardado correctamente."
                 );
+                cargarProductos();
 
                 limpiarFormulario();
 
@@ -552,6 +581,48 @@ public class ProductoController {
 
         lblEstado.setText(
                 mensaje
+        );
+    }
+    private void configurarTabla() {
+
+        colCodigo.setCellValueFactory(
+                new PropertyValueFactory<>("codigo")
+        );
+
+        colNombre.setCellValueFactory(
+                new PropertyValueFactory<>("nombre")
+        );
+
+        colPrecio.setCellValueFactory(
+                new PropertyValueFactory<>("precioVenta")
+        );
+
+        colExistencia.setCellValueFactory(
+                new PropertyValueFactory<>("existencia")
+        );
+
+        colActivo.setCellValueFactory(
+                new PropertyValueFactory<>("activo")
+        );
+
+        colCategoria.setCellValueFactory(
+                datos -> new javafx.beans.property.SimpleStringProperty(
+                        datos.getValue()
+                                .getCategoria()
+                                .getNombre()
+                )
+        );
+    }
+
+    private void cargarProductos() {
+
+        List<Producto> productos =
+                productoDAO.listar();
+
+        tvProductos.getItems().clear();
+
+        tvProductos.getItems().addAll(
+                productos
         );
     }
 }
