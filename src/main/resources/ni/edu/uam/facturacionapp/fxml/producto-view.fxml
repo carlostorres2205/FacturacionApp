@@ -14,7 +14,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="560.0"
+<BorderPane prefHeight="500.0"
             prefWidth="1000.0"
             xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -75,9 +75,9 @@
 
                     <RowConstraints prefHeight="70.0"/>
 
-                    <RowConstraints prefHeight="70.0"/>
+                    <RowConstraints prefHeight="80.0"/>
 
-                    <RowConstraints prefHeight="70.0"/>
+                    <RowConstraints prefHeight="50.0"/>
 
                 </rowConstraints>
 
@@ -133,10 +133,20 @@
                         </font>
                     </Label>
 
-                    <ComboBox fx:id="cbCategoria"
-                              promptText="Seleccione"
-                              prefHeight="42.0"
-                              maxWidth="Infinity"/>
+                    <HBox spacing="10.0">
+
+                        <ComboBox fx:id="cbCategoria"
+                                  promptText="Seleccione"
+                                  prefHeight="42.0"
+                                  maxWidth="Infinity"
+                                  HBox.hgrow="ALWAYS"/>
+
+                        <Button fx:id="btnNuevaCategoria"
+                                text="Nueva categoría"
+                                prefHeight="42.0"
+                                onAction="#agregarCategoria"/>
+
+                    </HBox>
 
                 </VBox>
 
@@ -179,41 +189,10 @@
                 </VBox>
 
 
-                <!-- RUTA IMAGEN -->
-
-                <VBox spacing="7.0"
-                      GridPane.columnIndex="0"
-                      GridPane.columnSpan="2"
-                      GridPane.rowIndex="2">
-
-                    <Label text="Ruta imagen">
-                        <font>
-                            <Font size="15.0"/>
-                        </font>
-                    </Label>
-
-                    <HBox spacing="10.0">
-
-                        <TextField fx:id="txtRutaImagen"
-                                   editable="false"
-                                   promptText="Seleccione una imagen"
-                                   prefHeight="42.0"
-                                   HBox.hgrow="ALWAYS"/>
-
-                        <Button fx:id="btnSeleccionarImagen"
-                                text="Seleccionar"
-                                prefHeight="42.0"
-                                onAction="#seleccionarImagen"/>
-
-                    </HBox>
-
-                </VBox>
-
-
                 <!-- ACTIVO -->
 
                 <VBox alignment="CENTER_LEFT"
-                      GridPane.columnIndex="2"
+                      GridPane.columnIndex="0"
                       GridPane.rowIndex="2">
 
                     <CheckBox fx:id="chkActivo"

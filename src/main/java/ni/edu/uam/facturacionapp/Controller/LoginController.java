@@ -60,7 +60,7 @@ public class LoginController {
 
                 FXMLLoader loader = new FXMLLoader(
                         getClass().getResource(
-                                "/ni/edu/uam/facturacionapp/producto-view.fxml"
+                                "/ni/edu/uam/facturacionapp/fxml/producto-view.fxml"
                         )
                 );
 
