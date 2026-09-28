@@ -16,3 +16,4 @@ public class Producto {
     private String rutaImagen;
     private boolean activo;
 }
+//XD
