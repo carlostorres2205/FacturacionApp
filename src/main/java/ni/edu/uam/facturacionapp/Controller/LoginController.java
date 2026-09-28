@@ -12,105 +12,88 @@ import java.io.IOException;
 
 public class LoginController {
 
-    private static final String USUARIO_CORRECTO = "Admin";
-    private static final String CONTRASENA_CORRECTA = "Admin2026*";
-
-    @FXML
-    private TextField txtUsuario;
-
-    @FXML
-    private PasswordField txtContrasena;
-
-    @FXML
-    private Label lblMensaje;
 
 
-    @FXML
-    private void iniciarSesion() {
+        @FXML
+        private TextField txtUsuario;
 
-        String usuario = txtUsuario.getText().trim();
-        String contrasena = txtContrasena.getText();
+        @FXML
+        private PasswordField txtContrasena;
 
-        if (usuario.isEmpty()) {
+        @FXML
+        private Label lblMensaje;
 
-            lblMensaje.setText(
-                    "Debe ingresar el usuario."
-            );
 
-            txtUsuario.requestFocus();
-            return;
-        }
+        @FXML
+        private void iniciarSesion() {
 
-        if (contrasena.isEmpty()) {
+            String usuario = txtUsuario.getText().trim();
+            String contrasena = txtContrasena.getText().trim();
 
-            lblMensaje.setText(
-                    "Debe ingresar la contraseña."
-            );
+            if (usuario.isEmpty()) {
 
-            txtContrasena.requestFocus();
-            return;
-        }
+                lblMensaje.setText(
+                        "Debe ingresar el usuario."
+                );
 
-        if (usuario.equals(USUARIO_CORRECTO)
-                && contrasena.equals(CONTRASENA_CORRECTA)) {
+                txtUsuario.requestFocus();
+                return;
+            }
 
-            lblMensaje.setText(
-                    "Inicio de sesión correcto."
-            );
+            if (contrasena.isEmpty()) {
+
+                lblMensaje.setText(
+                        "Debe ingresar la contraseña."
+                );
+
+                txtContrasena.requestFocus();
+                return;
+            }
 
             abrirFormularioProducto();
+        }
 
-        } else {
 
-            lblMensaje.setText(
-                    "Usuario o contraseña incorrectos."
-            );
+        private void abrirFormularioProducto() {
 
-            txtContrasena.clear();
-            txtContrasena.requestFocus();
+            try {
+
+                FXMLLoader loader = new FXMLLoader(
+                        getClass().getResource(
+                                "/ni/edu/uam/facturacionapp/fxml/producto-view.fxml"
+                        )
+                );
+
+                Scene scene = new Scene(
+                        loader.load()
+                );
+
+                Stage ventanaProducto = new Stage();
+
+                ventanaProducto.setTitle(
+                        "Formulario Producto"
+                );
+
+                ventanaProducto.setScene(scene);
+
+                ventanaProducto.show();
+
+
+                Stage ventanaLogin =
+                        (Stage) txtUsuario
+                                .getScene()
+                                .getWindow();
+
+                ventanaLogin.close();
+
+            } catch (IOException e) {
+
+                e.printStackTrace();
+
+                lblMensaje.setText(
+                        "No se pudo abrir el formulario de producto."
+                );
+            }
         }
     }
 
-
-    private void abrirFormularioProducto() {
-
-        try {
-
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource(
-                            "/ni/edu/uam/facturacionapp/fxml/producto-view.fxml"
-                    )
-            );
-
-            Scene scene = new Scene(
-                    loader.load()
-            );
-
-            Stage ventanaProducto = new Stage();
-
-            ventanaProducto.setTitle(
-                    "Formulario Producto"
-            );
-
-            ventanaProducto.setScene(scene);
-
-            ventanaProducto.show();
-
-
-            Stage ventanaLogin =
-                    (Stage) txtUsuario
-                            .getScene()
-                            .getWindow();
-
-            ventanaLogin.close();
-
-        } catch (IOException e) {
-
-            e.printStackTrace();
-
-            lblMensaje.setText(
-                    "No se pudo abrir el formulario de producto."
-            );
-        }
-    }
-}
