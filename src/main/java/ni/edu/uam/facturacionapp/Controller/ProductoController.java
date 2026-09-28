@@ -2,18 +2,19 @@ package ni.edu.uam.facturacionapp.Controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.stage.FileChooser;
-import javafx.stage.Stage;
+
 import ni.edu.uam.facturacionapp.DAO.CategoriaDAO;
 import ni.edu.uam.facturacionapp.DAO.ProductoDAO;
 import ni.edu.uam.facturacionapp.model.Categoria;
 import ni.edu.uam.facturacionapp.model.Producto;
+import javafx.scene.control.cell.PropertyValueFactory;
 
-import java.io.File;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 public class ProductoController {
+
     @FXML
     private TextField txtCodigo;
 
@@ -30,13 +31,10 @@ public class ProductoController {
     private TextField txtExistencia;
 
     @FXML
-    private TextField txtRutaImagen;
-
-    @FXML
     private CheckBox chkActivo;
 
     @FXML
-    private Button btnSeleccionarImagen;
+    private Button btnNuevaCategoria;
 
     @FXML
     private Button btnGuardar;
@@ -47,6 +45,27 @@ public class ProductoController {
     @FXML
     private Label lblEstado;
 
+    @FXML
+    private TableView<Producto> tvProductos;
+
+    @FXML
+    private TableColumn<Producto, String> colCodigo;
+
+    @FXML
+    private TableColumn<Producto, String> colNombre;
+
+    @FXML
+    private TableColumn<Producto, String> colCategoria;
+
+    @FXML
+    private TableColumn<Producto, BigDecimal> colPrecio;
+
+    @FXML
+    private TableColumn<Producto, Integer> colExistencia;
+
+    @FXML
+    private TableColumn<Producto, Boolean> colActivo;
+
 
     private final CategoriaDAO categoriaDAO =
             new CategoriaDAO();
@@ -55,13 +74,15 @@ public class ProductoController {
             new ProductoDAO();
 
 
-    private File archivoImagen;
-
-
     @FXML
     public void initialize() {
 
         cargarCategorias();
+        cargarCategorias();
+
+        configurarTabla();
+
+        cargarProductos();
 
         chkActivo.setSelected(true);
     }
@@ -69,17 +90,14 @@ public class ProductoController {
 
     private void cargarCategorias() {
 
-        List<Categoria> categorias = categoriaDAO.listar();
-
-        if (categorias.isEmpty()) {
-
-            crearCategoriasIniciales();
-
-            categorias = categoriaDAO.listar();
-        }
+        List<Categoria> categorias =
+                categoriaDAO.listar();
 
         cbCategoria.getItems().clear();
-        cbCategoria.getItems().addAll(categorias);
+
+        cbCategoria.getItems().addAll(
+                categorias
+        );
 
         if (categorias.isEmpty()) {
 
@@ -97,49 +115,118 @@ public class ProductoController {
 
 
     @FXML
-    private void seleccionarImagen() {
+    private void agregarCategoria() {
 
-        FileChooser fileChooser =
-                new FileChooser();
+        TextInputDialog dialogo =
+                new TextInputDialog();
 
-        fileChooser.setTitle(
-                "Seleccionar imagen del producto"
+        dialogo.setTitle(
+                "Nueva categoría"
         );
 
-        fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter(
-                        "Imágenes",
-                        "*.png",
-                        "*.jpg",
-                        "*.jpeg"
-                )
+        dialogo.setHeaderText(
+                "Registrar una nueva categoría"
+        );
+
+        dialogo.setContentText(
+                "Nombre:"
         );
 
 
-        Stage ventana =
-                (Stage) btnSeleccionarImagen
-                        .getScene()
-                        .getWindow();
+        Optional<String> resultado =
+                dialogo.showAndWait();
 
 
-        File archivoSeleccionado =
-                fileChooser.showOpenDialog(
-                        ventana
+        if (resultado.isEmpty()) {
+            return;
+        }
+
+
+        String nombre =
+                resultado
+                        .get()
+                        .trim();
+
+
+        if (nombre.isEmpty()) {
+
+            mostrarAdvertencia(
+                    "Debe ingresar el nombre de la categoría."
+            );
+
+            return;
+        }
+
+
+        for (Categoria categoria :
+                cbCategoria.getItems()) {
+
+            if (categoria
+                    .getNombre()
+                    .equalsIgnoreCase(nombre)) {
+
+                mostrarAdvertencia(
+                        "La categoría ya existe."
+                );
+
+                cbCategoria.setValue(
+                        categoria
+                );
+
+                return;
+            }
+        }
+
+
+        Categoria nuevaCategoria =
+                new Categoria();
+
+        nuevaCategoria.setNombre(
+                nombre
+        );
+
+        nuevaCategoria.setActiva(
+                true
+        );
+
+
+        boolean guardada =
+                categoriaDAO.guardar(
+                        nuevaCategoria
                 );
 
 
-        if (archivoSeleccionado != null) {
+        if (guardada) {
 
-            archivoImagen =
-                    archivoSeleccionado;
+            cargarCategorias();
 
-            txtRutaImagen.setText(
-                    archivoSeleccionado
-                            .getAbsolutePath()
-            );
+
+            for (Categoria categoria :
+                    cbCategoria.getItems()) {
+
+                if (categoria
+                        .getId()
+                        .equals(
+                                nuevaCategoria.getId()
+                        )) {
+
+                    cbCategoria.setValue(
+                            categoria
+                    );
+
+                    break;
+                }
+            }
+
 
             lblEstado.setText(
-                    "Imagen seleccionada correctamente."
+                    "Categoría agregada correctamente."
+            );
+
+        } else {
+
+            mostrarError(
+                    "No se pudo guardar la categoría."
             );
         }
     }
@@ -183,11 +270,6 @@ public class ProductoController {
                                     .trim()
                     );
 
-            String rutaImagen =
-                    txtRutaImagen
-                            .getText()
-                            .trim();
-
             boolean activo =
                     chkActivo
                             .isSelected();
@@ -216,8 +298,12 @@ public class ProductoController {
                     existencia
             );
 
+            /*
+             * Ya no estamos trabajando
+             * con selección de imágenes.
+             */
             producto.setRutaImagen(
-                    rutaImagen
+                    null
             );
 
             producto.setActivo(
@@ -237,6 +323,7 @@ public class ProductoController {
                         new Alert(
                                 Alert.AlertType.INFORMATION
                         );
+
 
                 alerta.setTitle(
                         "Producto guardado"
@@ -258,6 +345,7 @@ public class ProductoController {
                 lblEstado.setText(
                         "Producto guardado correctamente."
                 );
+                cargarProductos();
 
                 limpiarFormulario();
 
@@ -419,17 +507,17 @@ public class ProductoController {
 
         txtNombre.clear();
 
-        cbCategoria.setValue(null);
+        cbCategoria.setValue(
+                null
+        );
 
         txtPrecio.clear();
 
         txtExistencia.clear();
 
-        txtRutaImagen.clear();
-
-        chkActivo.setSelected(true);
-
-        archivoImagen = null;
+        chkActivo.setSelected(
+                true
+        );
 
         lblEstado.setText(
                 "Formulario limpiado."
@@ -452,7 +540,9 @@ public class ProductoController {
                 "Validación"
         );
 
-        alerta.setHeaderText(null);
+        alerta.setHeaderText(
+                null
+        );
 
         alerta.setContentText(
                 mensaje
@@ -493,47 +583,46 @@ public class ProductoController {
                 mensaje
         );
     }
-    private void crearCategoriasIniciales() {
+    private void configurarTabla() {
 
-        Categoria electronica =
-                new Categoria(
-                        null,
-                        "Electrónica",
-                        true
-                );
+        colCodigo.setCellValueFactory(
+                new PropertyValueFactory<>("codigo")
+        );
 
-        Categoria alimentos =
-                new Categoria(
-                        null,
-                        "Alimentos",
-                        true
-                );
+        colNombre.setCellValueFactory(
+                new PropertyValueFactory<>("nombre")
+        );
 
-        Categoria limpieza =
-                new Categoria(
-                        null,
-                        "Limpieza",
-                        true
-                );
+        colPrecio.setCellValueFactory(
+                new PropertyValueFactory<>("precioVenta")
+        );
 
-        Categoria hogar =
-                new Categoria(
-                        null,
-                        "Hogar",
-                        true
-                );
+        colExistencia.setCellValueFactory(
+                new PropertyValueFactory<>("existencia")
+        );
 
-        Categoria oficina =
-                new Categoria(
-                        null,
-                        "Oficina",
-                        true
-                );
+        colActivo.setCellValueFactory(
+                new PropertyValueFactory<>("activo")
+        );
 
-        categoriaDAO.guardar(electronica);
-        categoriaDAO.guardar(alimentos);
-        categoriaDAO.guardar(limpieza);
-        categoriaDAO.guardar(hogar);
-        categoriaDAO.guardar(oficina);
+        colCategoria.setCellValueFactory(
+                datos -> new javafx.beans.property.SimpleStringProperty(
+                        datos.getValue()
+                                .getCategoria()
+                                .getNombre()
+                )
+        );
+    }
+
+    private void cargarProductos() {
+
+        List<Producto> productos =
+                productoDAO.listar();
+
+        tvProductos.getItems().clear();
+
+        tvProductos.getItems().addAll(
+                productos
+        );
     }
 }
