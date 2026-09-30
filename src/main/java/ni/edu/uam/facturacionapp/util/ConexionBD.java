@@ -10,7 +10,7 @@ public class ConexionBD {
 
     private static final String USUARIO = "postgres";
 
-    private static final String PASSWORD = "1234"; //Esto lo tenes que cambiar a la contraseña que tenes vos.
+    private static final String PASSWORD = "Admin2026*"; //Esto lo tenes que cambiar a la contraseña que tenes vos.
 
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USUARIO, PASSWORD);
