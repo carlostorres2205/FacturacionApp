@@ -231,6 +231,15 @@
                         prefHeight="42.0"
                         prefWidth="130.0"
                         onAction="#limpiarFormulario"/>
+                <Button fx:id="btnEliminar"
+                        text="Eliminar"
+                        prefHeight="42.0"
+                        prefWidth="130.0"
+                        onAction="#eliminarProducto"
+                        style="-fx-background-color: #dc3545;
+               -fx-text-fill: white;
+               -fx-font-size: 14px;
+               -fx-font-weight: bold;"/>
 
             </HBox>
             <Label text="PRODUCTOS REGISTRADOS">

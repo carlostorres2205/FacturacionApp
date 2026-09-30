@@ -48,6 +48,10 @@ public class ProductoController {
     private Button btnLimpiar;
 
     @FXML
+    private Button btnEliminar;
+
+
+    @FXML
     private Label lblEstado;
 
     @FXML
@@ -79,6 +83,8 @@ public class ProductoController {
 
     @FXML
     private ComboBox<String> cbFiltroCategoria;
+
+
 
 
     private final CategoriaDAO categoriaDAO =
@@ -123,6 +129,78 @@ public class ProductoController {
         lblEstado.setText(
                 "Mostrando todos los productos."
         );
+    }
+
+    @FXML
+    private void eliminarProducto() {
+
+        Producto seleccionado =
+                tvProductos
+                        .getSelectionModel()
+                        .getSelectedItem();
+
+        if (seleccionado == null) {
+
+            mostrarAdvertencia(
+                    "Debe seleccionar un producto para eliminar."
+            );
+
+            return;
+        }
+
+
+        Alert confirmacion =
+                new Alert(
+                        Alert.AlertType.CONFIRMATION
+                );
+
+        confirmacion.setTitle(
+                "Eliminar producto"
+        );
+
+        confirmacion.setHeaderText(
+                "¿Desea eliminar este producto?"
+        );
+
+        confirmacion.setContentText(
+                seleccionado.getCodigo()
+                        + " - "
+                        + seleccionado.getNombre()
+        );
+
+
+        Optional<ButtonType> respuesta =
+                confirmacion.showAndWait();
+
+
+        if (respuesta.isPresent()
+                && respuesta.get() == ButtonType.OK) {
+
+            boolean eliminado =
+                    productoDAO.eliminar(
+                            seleccionado.getId()
+                    );
+
+
+            if (eliminado) {
+
+                cargarProductos();
+
+                tvProductos
+                        .getSelectionModel()
+                        .clearSelection();
+
+                lblEstado.setText(
+                        "Producto eliminado correctamente."
+                );
+
+            } else {
+
+                mostrarError(
+                        "No se pudo eliminar el producto."
+                );
+            }
+        }
     }
 
 
