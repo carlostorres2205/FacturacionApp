@@ -1,4 +1,4 @@
-package ni.edu.uam.facturacionapp.Controller;
+package ni.edu.uam.facturacionapp.controller;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -27,6 +27,9 @@ public class LoginController {
         @FXML
         private void iniciarSesion() {
 
+            String userReal ="Admin";
+            String password = "Admin2026*";
+
             String usuario = txtUsuario.getText().trim();
             String contrasena = txtContrasena.getText().trim();
 
@@ -50,7 +53,17 @@ public class LoginController {
                 return;
             }
 
-            abrirFormularioProducto();
+            if (usuario.equals(userReal) && contrasena.equals(password)) {
+                abrirFormularioProducto();
+
+            }
+            lblMensaje.setText(
+                    "Usuario o Contraseña incorrectos."
+            );
+
+
+
+
         }
 
 

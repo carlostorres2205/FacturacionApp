@@ -1,7 +1,7 @@
-package ni.edu.uam.facturacionapp.DAO;
+package ni.edu.uam.facturacionapp.dao;
 
 import ni.edu.uam.facturacionapp.model.Categoria;
-import ni.edu.uam.facturacionapp.util.conexionBD;
+import ni.edu.uam.facturacionapp.util.ConexionBD;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ public class CategoriaDAO {
                 """;
 
         try (
-                Connection conexion = conexionBD.getConnection();
+                Connection conexion = ConexionBD.getConnection();
 
                 PreparedStatement ps = conexion.prepareStatement(
                         sql,
@@ -71,7 +71,7 @@ public class CategoriaDAO {
 
         try (
                 Connection conexion =
-                        conexionBD.getConnection();
+                        ConexionBD.getConnection();
 
                 PreparedStatement ps =
                         conexion.prepareStatement(sql);
@@ -118,7 +118,7 @@ public class CategoriaDAO {
 
         try (
                 Connection conexion =
-                        conexionBD.getConnection();
+                        ConexionBD.getConnection();
 
                 PreparedStatement ps =
                         conexion.prepareStatement(sql)
@@ -168,7 +168,7 @@ public class CategoriaDAO {
 
         try (
                 Connection conexion =
-                        conexionBD.getConnection();
+                        ConexionBD.getConnection();
 
                 PreparedStatement ps =
                         conexion.prepareStatement(sql)
@@ -208,7 +208,7 @@ public class CategoriaDAO {
 
         try (
                 Connection conexion =
-                        conexionBD.getConnection();
+                        ConexionBD.getConnection();
 
                 PreparedStatement ps =
                         conexion.prepareStatement(sql)

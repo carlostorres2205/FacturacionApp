@@ -1,10 +1,10 @@
-package ni.edu.uam.facturacionapp.Controller;
+package ni.edu.uam.facturacionapp.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
-import ni.edu.uam.facturacionapp.DAO.CategoriaDAO;
-import ni.edu.uam.facturacionapp.DAO.ProductoDAO;
+import ni.edu.uam.facturacionapp.dao.CategoriaDAO;
+import ni.edu.uam.facturacionapp.dao.ProductoDAO;
 import ni.edu.uam.facturacionapp.model.Categoria;
 import ni.edu.uam.facturacionapp.model.Producto;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -77,7 +77,6 @@ public class ProductoController {
     @FXML
     public void initialize() {
 
-        cargarCategorias();
         cargarCategorias();
 
         configurarTabla();
