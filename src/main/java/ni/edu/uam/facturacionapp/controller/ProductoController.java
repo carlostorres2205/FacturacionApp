@@ -82,6 +82,89 @@ public class ProductoController {
             new ProductoDAO();
 
 
+
+
+    @FXML
+    private void buscarProducto() {
+
+        String texto =
+                txtBuscar
+                        .getText()
+                        .trim()
+                        .toLowerCase(Locale.ROOT);
+
+        if (texto.isEmpty()) {
+
+            productosFiltrados.setPredicate(
+                    producto -> true
+            );
+
+            lblEstado.setText(
+                    "Mostrando todos los productos."
+            );
+
+            return;
+        }
+
+        productosFiltrados.setPredicate(
+                producto -> {
+
+                    String codigo =
+                            producto.getCodigo() == null
+                                    ? ""
+                                    : producto.getCodigo()
+                                      .toLowerCase(Locale.ROOT);
+
+                    String nombre =
+                            producto.getNombre() == null
+                                    ? ""
+                                    : producto.getNombre()
+                                      .toLowerCase(Locale.ROOT);
+
+                    String categoria = "";
+
+                    if (producto.getCategoria() != null
+                            && producto.getCategoria().getNombre() != null) {
+
+                        categoria =
+                                producto
+                                        .getCategoria()
+                                        .getNombre()
+                                        .toLowerCase(Locale.ROOT);
+                    }
+
+                    return codigo.contains(texto)
+                            || nombre.contains(texto)
+                            || categoria.contains(texto);
+                }
+        );
+
+        lblEstado.setText(
+                "Resultados encontrados: "
+                        + productosFiltrados.size()
+        );
+    }
+
+    @FXML
+    private void limpiarBusqueda() {
+
+        txtBuscar.clear();
+
+        productosFiltrados.setPredicate(
+                producto -> true
+        );
+
+        tvProductos.getSelectionModel()
+                .clearSelection();
+
+        lblEstado.setText(
+                "Búsqueda limpiada. Mostrando todos los productos."
+        );
+
+        txtBuscar.requestFocus();
+    }
+
+
     @FXML
     public void initialize() {
 
