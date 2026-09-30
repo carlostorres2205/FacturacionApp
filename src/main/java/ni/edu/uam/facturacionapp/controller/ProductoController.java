@@ -89,7 +89,15 @@ public class ProductoController {
 
         configurarTabla();
 
+
+        productosFiltrados =
+                new FilteredList<>(productos, p -> true);
+
+        tvProductos.setItems(
+                productosFiltrados
+        );
         cargarProductos();
+
 
         chkActivo.setSelected(true);
     }
@@ -623,13 +631,10 @@ public class ProductoController {
 
     private void cargarProductos() {
 
-        List<Producto> productos =
-                productoDAO.listar();
+        productos.clear();
 
-        tvProductos.getItems().clear();
-
-        tvProductos.getItems().addAll(
-                productos
+        productos.addAll(
+                productoDAO.listar()
         );
     }
 
