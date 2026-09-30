@@ -105,6 +105,26 @@ public class ProductoController {
         txtBuscar.requestFocus();
     }
 
+    @FXML
+    private void limpiarFiltros() {
+
+        txtBuscar.clear();
+
+        cbFiltroEstado.setValue(
+                "Todos"
+        );
+
+        cbFiltroCategoria.setValue(
+                "Todas las categorías"
+        );
+
+        aplicarFiltros();
+
+        lblEstado.setText(
+                "Mostrando todos los productos."
+        );
+    }
+
 
     @FXML
     public void initialize() {
@@ -820,5 +840,40 @@ public class ProductoController {
                 "Productos encontrados: "
                         + productosFiltrados.size()
         );
+    }
+
+    private void actualizarCategoriasFiltro() {
+
+        String seleccionActual =
+                cbFiltroCategoria.getValue();
+
+        cbFiltroCategoria.getItems().clear();
+
+        cbFiltroCategoria.getItems().add(
+                "Todas las categorías"
+        );
+
+        for (Categoria categoria : categoriaDAO.listar()) {
+
+            cbFiltroCategoria.getItems().add(
+                    categoria.getNombre()
+            );
+        }
+
+        if (seleccionActual != null
+                && cbFiltroCategoria
+                .getItems()
+                .contains(seleccionActual)) {
+
+            cbFiltroCategoria.setValue(
+                    seleccionActual
+            );
+
+        } else {
+
+            cbFiltroCategoria.setValue(
+                    "Todas las categorías"
+            );
+        }
     }
 }

@@ -258,6 +258,23 @@
                         onAction="#limpiarBusqueda"/>
 
             </HBox>
+            <HBox spacing="10.0"
+                  alignment="CENTER_LEFT">
+
+                <Label text="Estado:"/>
+
+                <ComboBox fx:id="cbFiltroEstado"
+                          prefWidth="150.0"/>
+
+                <Label text="Categoría:"/>
+
+                <ComboBox fx:id="cbFiltroCategoria"
+                          prefWidth="200.0"/>
+
+                <Button text="Limpiar filtros"
+                        onAction="#limpiarFiltros"/>
+
+            </HBox>
 
             <TableView fx:id="tvProductos"
                        prefHeight="220.0">
