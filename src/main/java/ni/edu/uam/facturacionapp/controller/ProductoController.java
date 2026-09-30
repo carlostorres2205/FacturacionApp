@@ -74,6 +74,12 @@ public class ProductoController {
     @FXML
     private TextField txtBuscar;
 
+    @FXML
+    private ComboBox<String> cbFiltroEstado;
+
+    @FXML
+    private ComboBox<String> cbFiltroCategoria;
+
 
     private final CategoriaDAO categoriaDAO =
             new CategoriaDAO();
@@ -86,63 +92,7 @@ public class ProductoController {
 
     @FXML
     private void buscarProducto() {
-
-        String texto =
-                txtBuscar
-                        .getText()
-                        .trim()
-                        .toLowerCase(Locale.ROOT);
-
-        if (texto.isEmpty()) {
-
-            productosFiltrados.setPredicate(
-                    producto -> true
-            );
-
-            lblEstado.setText(
-                    "Mostrando todos los productos."
-            );
-
-            return;
-        }
-
-        productosFiltrados.setPredicate(
-                producto -> {
-
-                    String codigo =
-                            producto.getCodigo() == null
-                                    ? ""
-                                    : producto.getCodigo()
-                                      .toLowerCase(Locale.ROOT);
-
-                    String nombre =
-                            producto.getNombre() == null
-                                    ? ""
-                                    : producto.getNombre()
-                                      .toLowerCase(Locale.ROOT);
-
-                    String categoria = "";
-
-                    if (producto.getCategoria() != null
-                            && producto.getCategoria().getNombre() != null) {
-
-                        categoria =
-                                producto
-                                        .getCategoria()
-                                        .getNombre()
-                                        .toLowerCase(Locale.ROOT);
-                    }
-
-                    return codigo.contains(texto)
-                            || nombre.contains(texto)
-                            || categoria.contains(texto);
-                }
-        );
-
-        lblEstado.setText(
-                "Resultados encontrados: "
-                        + productosFiltrados.size()
-        );
+        aplicarFiltros();
     }
 
     @FXML
@@ -150,16 +100,7 @@ public class ProductoController {
 
         txtBuscar.clear();
 
-        productosFiltrados.setPredicate(
-                producto -> true
-        );
-
-        tvProductos.getSelectionModel()
-                .clearSelection();
-
-        lblEstado.setText(
-                "Búsqueda limpiada. Mostrando todos los productos."
-        );
+        aplicarFiltros();
 
         txtBuscar.requestFocus();
     }
@@ -172,15 +113,19 @@ public class ProductoController {
 
         configurarTabla();
 
-
         productosFiltrados =
-                new FilteredList<>(productos, p -> true);
+                new FilteredList<>(
+                        productos,
+                        producto -> true
+                );
 
         tvProductos.setItems(
                 productosFiltrados
         );
-        cargarProductos();
 
+        configurarFiltros();
+
+        cargarProductos();
 
         chkActivo.setSelected(true);
     }
@@ -725,4 +670,155 @@ public class ProductoController {
             FXCollections.observableArrayList();
 
     private FilteredList<Producto> productosFiltrados;
+
+    private void configurarFiltros() {
+
+        cbFiltroEstado.getItems().addAll(
+                "Todos",
+                "Activos",
+                "Inactivos"
+        );
+
+        cbFiltroEstado.setValue("Todos");
+
+
+        cbFiltroCategoria.getItems().add(
+                "Todas las categorías"
+        );
+
+        for (Categoria categoria : categoriaDAO.listar()) {
+
+            cbFiltroCategoria.getItems().add(
+                    categoria.getNombre()
+            );
+        }
+
+        cbFiltroCategoria.setValue(
+                "Todas las categorías"
+        );
+
+
+        cbFiltroEstado.setOnAction(
+                event -> aplicarFiltros()
+        );
+
+        cbFiltroCategoria.setOnAction(
+                event -> aplicarFiltros()
+        );
+    }
+
+    private void aplicarFiltros() {
+
+        String texto =
+                txtBuscar
+                        .getText()
+                        .trim()
+                        .toLowerCase(Locale.ROOT);
+
+        String estado =
+                cbFiltroEstado.getValue();
+
+        String categoriaSeleccionada =
+                cbFiltroCategoria.getValue();
+
+
+        productosFiltrados.setPredicate(
+                producto -> {
+
+                    // -------------------------
+                    // BÚSQUEDA
+                    // -------------------------
+
+                    boolean coincideBusqueda;
+
+                    if (texto.isEmpty()) {
+
+                        coincideBusqueda = true;
+
+                    } else {
+
+                        String codigo =
+                                producto.getCodigo() == null
+                                        ? ""
+                                        : producto
+                                          .getCodigo()
+                                          .toLowerCase(Locale.ROOT);
+
+                        String nombre =
+                                producto.getNombre() == null
+                                        ? ""
+                                        : producto
+                                          .getNombre()
+                                          .toLowerCase(Locale.ROOT);
+
+                        String categoria = "";
+
+                        if (producto.getCategoria() != null
+                                && producto.getCategoria().getNombre() != null) {
+
+                            categoria =
+                                    producto
+                                            .getCategoria()
+                                            .getNombre()
+                                            .toLowerCase(Locale.ROOT);
+                        }
+
+                        coincideBusqueda =
+                                codigo.contains(texto)
+                                        || nombre.contains(texto)
+                                        || categoria.contains(texto);
+                    }
+
+
+                    // -------------------------
+                    // ESTADO
+                    // -------------------------
+
+                    boolean coincideEstado = true;
+
+                    if ("Activos".equals(estado)) {
+
+                        coincideEstado =
+                                producto.isActivo();
+
+                    } else if ("Inactivos".equals(estado)) {
+
+                        coincideEstado =
+                                !producto.isActivo();
+                    }
+
+
+                    // -------------------------
+                    // CATEGORÍA
+                    // -------------------------
+
+                    boolean coincideCategoria = true;
+
+                    if (categoriaSeleccionada != null
+                            && !"Todas las categorías"
+                            .equals(categoriaSeleccionada)) {
+
+                        coincideCategoria =
+                                producto.getCategoria() != null
+                                        && producto
+                                        .getCategoria()
+                                        .getNombre()
+                                        .equalsIgnoreCase(
+                                                categoriaSeleccionada
+                                        );
+                    }
+
+
+                    return coincideBusqueda
+                            && coincideEstado
+                            && coincideCategoria;
+                }
+        );
+
+
+        lblEstado.setText(
+                "Productos encontrados: "
+                        + productosFiltrados.size()
+        );
+    }
 }
