@@ -8,6 +8,11 @@ import ni.edu.uam.facturacionapp.dao.ProductoDAO;
 import ni.edu.uam.facturacionapp.model.Categoria;
 import ni.edu.uam.facturacionapp.model.Producto;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+
+import java.util.Locale;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -65,6 +70,9 @@ public class ProductoController {
 
     @FXML
     private TableColumn<Producto, Boolean> colActivo;
+
+    @FXML
+    private TextField txtBuscar;
 
 
     private final CategoriaDAO categoriaDAO =
@@ -624,4 +632,9 @@ public class ProductoController {
                 productos
         );
     }
+
+    private final ObservableList<Producto> productos =
+            FXCollections.observableArrayList();
+
+    private FilteredList<Producto> productosFiltrados;
 }

@@ -4,6 +4,8 @@ module ni.edu.uam.facturacionapp {
     requires static lombok;
     requires java.sql;
 
+
+
     exports ni.edu.uam.facturacionapp;
     exports ni.edu.uam.facturacionapp.model;
 
