@@ -226,6 +226,11 @@
                                -fx-font-size: 14px;
                                -fx-font-weight: bold;"/>
 
+                <Button
+                        fx:id="btnActualizar"
+                        text="Actualizar"
+                        onAction="#actualizarProducto"/>
+
                 <Button fx:id="btnLimpiar"
                         text="Limpiar"
                         prefHeight="42.0"

@@ -44,6 +44,9 @@ public class ProductoController {
     private Button btnGuardar;
 
     @FXML
+    private Button btnActualizar;
+
+    @FXML
     private Button btnLimpiar;
 
     @FXML
@@ -82,8 +85,11 @@ public class ProductoController {
     @FXML
     private ComboBox<String> cbFiltroCategoria;
 
-    private final CategoriaDAO categoriaDAO = new CategoriaDAO();
-    private final ProductoDAO productoDAO = new ProductoDAO();
+    private final CategoriaDAO categoriaDAO =
+            new CategoriaDAO();
+
+    private final ProductoDAO productoDAO =
+            new ProductoDAO();
 
     private final ObservableList<Producto> productos =
             FXCollections.observableArrayList();
@@ -96,6 +102,8 @@ public class ProductoController {
         cargarCategorias();
 
         configurarTabla();
+
+        configurarSeleccionProducto();
 
         productosFiltrados =
                 new FilteredList<>(
@@ -171,8 +179,88 @@ public class ProductoController {
             );
 
             System.err.println(
-                    "Error al guardar producto: "
-                            + e.getMessage()
+                    e.getMessage()
+            );
+        }
+    }
+
+    @FXML
+    private void actualizarProducto() {
+
+        Producto seleccionado =
+                tvProductos
+                        .getSelectionModel()
+                        .getSelectedItem();
+
+        if (seleccionado == null) {
+
+            mostrarAdvertencia(
+                    "Debe seleccionar el producto que desea actualizar."
+            );
+
+            return;
+        }
+
+        try {
+
+            Producto producto =
+                    obtenerProductoFormulario();
+
+            producto.setId(
+                    seleccionado.getId()
+            );
+
+            if (productoDAO.existeCodigo(
+                    producto.getCodigo(),
+                    producto.getId()
+            )) {
+
+                mostrarAdvertencia(
+                        "Ya existe otro producto con ese código."
+                );
+
+                txtCodigo.requestFocus();
+
+                return;
+            }
+
+            boolean actualizado =
+                    productoDAO.actualizar(
+                            producto
+                    );
+
+            if (actualizado) {
+
+                mostrarExito(
+                        "Producto actualizado",
+                        "El producto fue actualizado correctamente."
+                );
+
+                cargarProductos();
+
+                limpiarFormulario();
+
+            } else {
+
+                mostrarError(
+                        "No fue posible actualizar el producto."
+                );
+            }
+
+        } catch (IllegalArgumentException e) {
+
+            mostrarAdvertencia(
+                    e.getMessage()
+            );
+
+        } catch (SQLException e) {
+
+            mostrarError(
+                    "No fue posible actualizar el producto."
+            );
+
+            System.err.println(
+                    e.getMessage()
             );
         }
     }
@@ -221,15 +309,27 @@ public class ProductoController {
             );
         }
 
+        String textoPrecio =
+                txtPrecio
+                        .getText()
+                        .trim();
+
+        if (textoPrecio.isEmpty()) {
+
+            txtPrecio.requestFocus();
+
+            throw new IllegalArgumentException(
+                    "El precio es obligatorio."
+            );
+        }
+
         BigDecimal precio;
 
         try {
 
             precio =
                     new BigDecimal(
-                            txtPrecio
-                                    .getText()
-                                    .trim()
+                            textoPrecio
                     );
 
         } catch (NumberFormatException e) {
@@ -252,15 +352,27 @@ public class ProductoController {
             );
         }
 
+        String textoExistencia =
+                txtExistencia
+                        .getText()
+                        .trim();
+
+        if (textoExistencia.isEmpty()) {
+
+            txtExistencia.requestFocus();
+
+            throw new IllegalArgumentException(
+                    "La existencia es obligatoria."
+            );
+        }
+
         int existencia;
 
         try {
 
             existencia =
                     Integer.parseInt(
-                            txtExistencia
-                                    .getText()
-                                    .trim()
+                            textoExistencia
                     );
 
         } catch (NumberFormatException e) {
@@ -367,9 +479,7 @@ public class ProductoController {
 
                 cargarProductos();
 
-                tvProductos
-                        .getSelectionModel()
-                        .clearSelection();
+                limpiarFormulario();
 
                 lblEstado.setText(
                         "Producto eliminado correctamente."
@@ -389,8 +499,7 @@ public class ProductoController {
             );
 
             System.err.println(
-                    "Error al eliminar producto: "
-                            + e.getMessage()
+                    e.getMessage()
             );
         }
     }
@@ -432,8 +541,7 @@ public class ProductoController {
             );
 
             System.err.println(
-                    "Error al cargar categorías: "
-                            + e.getMessage()
+                    e.getMessage()
             );
         }
     }
@@ -539,8 +647,7 @@ public class ProductoController {
             );
 
             System.err.println(
-                    "Error al guardar categoría: "
-                            + e.getMessage()
+                    e.getMessage()
             );
         }
     }
@@ -593,6 +700,80 @@ public class ProductoController {
         }
     }
 
+    private void configurarSeleccionProducto() {
+
+        tvProductos
+                .getSelectionModel()
+                .selectedItemProperty()
+                .addListener(
+                        (observable, anterior, seleccionado) -> {
+
+                            if (seleccionado != null) {
+
+                                cargarProductoFormulario(
+                                        seleccionado
+                                );
+                            }
+                        }
+                );
+    }
+
+    private void cargarProductoFormulario(
+            Producto producto
+    ) {
+
+        txtCodigo.setText(
+                producto.getCodigo()
+        );
+
+        txtNombre.setText(
+                producto.getNombre()
+        );
+
+        if (producto.getPrecioVenta() != null) {
+
+            txtPrecio.setText(
+                    producto
+                            .getPrecioVenta()
+                            .toString()
+            );
+
+        } else {
+
+            txtPrecio.clear();
+        }
+
+        txtExistencia.setText(
+                String.valueOf(
+                        producto.getExistencia()
+                )
+        );
+
+        chkActivo.setSelected(
+                producto.isActivo()
+        );
+
+        if (producto.getCategoria() != null) {
+
+            seleccionarCategoriaPorId(
+                    producto
+                            .getCategoria()
+                            .getId()
+            );
+
+        } else {
+
+            cbCategoria.setValue(
+                    null
+            );
+        }
+
+        lblEstado.setText(
+                "Producto seleccionado: "
+                        + producto.getCodigo()
+        );
+    }
+
     private void cargarProductos() {
 
         try {
@@ -610,8 +791,7 @@ public class ProductoController {
             );
 
             System.err.println(
-                    "Error al cargar productos: "
-                            + e.getMessage()
+                    e.getMessage()
             );
         }
     }
@@ -821,8 +1001,7 @@ public class ProductoController {
             );
 
             System.err.println(
-                    "Error al cargar categorías del filtro: "
-                            + e.getMessage()
+                    e.getMessage()
             );
         }
     }
@@ -852,7 +1031,8 @@ public class ProductoController {
 
                     if (texto.isEmpty()) {
 
-                        coincideBusqueda = true;
+                        coincideBusqueda =
+                                true;
 
                     } else {
 
@@ -874,7 +1054,8 @@ public class ProductoController {
                                                 Locale.ROOT
                                         );
 
-                        String categoria = "";
+                        String categoria =
+                                "";
 
                         if (producto.getCategoria() != null
                                 && producto
@@ -902,7 +1083,8 @@ public class ProductoController {
                                 );
                     }
 
-                    boolean coincideEstado = true;
+                    boolean coincideEstado =
+                            true;
 
                     if ("Activos".equals(
                             estado
@@ -919,7 +1101,8 @@ public class ProductoController {
                                 !producto.isActivo();
                     }
 
-                    boolean coincideCategoria = true;
+                    boolean coincideCategoria =
+                            true;
 
                     if (categoriaSeleccionada != null
                             && !"Todas las categorías"
