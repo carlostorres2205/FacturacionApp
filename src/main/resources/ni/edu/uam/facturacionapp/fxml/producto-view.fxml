@@ -231,6 +231,11 @@
                         text="Actualizar"
                         onAction="#actualizarProducto"/>
 
+                <Button
+                        fx:id="btnEliminarCategoria"
+                        text="Eliminar categoría"
+                        onAction="#eliminarCategoria"/>
+
                 <Button fx:id="btnLimpiar"
                         text="Limpiar"
                         prefHeight="42.0"

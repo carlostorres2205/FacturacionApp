@@ -53,6 +53,9 @@ public class ProductoController {
     private Button btnEliminar;
 
     @FXML
+    private Button btnEliminarCategoria;
+
+    @FXML
     private Label lblEstado;
 
     @FXML
@@ -1215,5 +1218,101 @@ public class ProductoController {
         lblEstado.setText(
                 mensaje
         );
+    }
+    @FXML
+    private void eliminarCategoria() {
+
+        Categoria seleccionada =
+                cbCategoria
+                        .getSelectionModel()
+                        .getSelectedItem();
+
+        if (seleccionada == null) {
+
+            mostrarAdvertencia(
+                    "Debe seleccionar la categoría que desea eliminar."
+            );
+
+            cbCategoria.requestFocus();
+
+            return;
+        }
+
+        try {
+
+            if (categoriaDAO.tieneProductos(
+                    seleccionada.getId()
+            )) {
+
+                mostrarAdvertencia(
+                        "No puede eliminar la categoría porque tiene productos asociados."
+                );
+
+                return;
+            }
+
+            Alert confirmacion =
+                    new Alert(
+                            Alert.AlertType.CONFIRMATION
+                    );
+
+            confirmacion.setTitle(
+                    "Eliminar categoría"
+            );
+
+            confirmacion.setHeaderText(
+                    "¿Desea eliminar esta categoría?"
+            );
+
+            confirmacion.setContentText(
+                    seleccionada.getNombre()
+            );
+
+            Optional<ButtonType> respuesta =
+                    confirmacion.showAndWait();
+
+            if (respuesta.isEmpty()
+                    || respuesta.get() != ButtonType.OK) {
+
+                return;
+            }
+
+            boolean eliminada =
+                    categoriaDAO.eliminar(
+                            seleccionada.getId()
+                    );
+
+            if (eliminada) {
+
+                mostrarExito(
+                        "Categoría eliminada",
+                        "La categoría fue eliminada correctamente."
+                );
+
+                cbCategoria.setValue(
+                        null
+                );
+
+                cargarCategorias();
+
+                actualizarCategoriasFiltro();
+
+            } else {
+
+                mostrarError(
+                        "No fue posible eliminar la categoría."
+                );
+            }
+
+        } catch (SQLException e) {
+
+            mostrarError(
+                    "No fue posible eliminar la categoría."
+            );
+
+            System.err.println(
+                    e.getMessage()
+            );
+        }
     }
 }
