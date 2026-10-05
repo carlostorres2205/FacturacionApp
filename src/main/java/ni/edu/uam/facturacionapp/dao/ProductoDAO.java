@@ -11,8 +11,7 @@ import java.util.List;
 public class ProductoDAO {
 
 
-    public boolean guardar(Producto producto) {
-
+    public boolean guardar(Producto producto) throws SQLException {
 
 
         String sql = """
@@ -94,11 +93,8 @@ public class ProductoDAO {
                 return true;
             }
 
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-
-        return false;
+            return false;
     }
 
 

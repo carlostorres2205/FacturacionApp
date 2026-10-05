@@ -300,23 +300,28 @@ public class ProductoController {
         }
 
 
-        for (Categoria categoria :
-                cbCategoria.getItems()) {
+        try {
 
-            if (categoria
-                    .getNombre()
-                    .equalsIgnoreCase(nombre)) {
+            if (categoriaDAO.existeNombre(nombre)) {
 
                 mostrarAdvertencia(
-                        "La categoría ya existe."
-                );
-
-                cbCategoria.setValue(
-                        categoria
+                        "Ya existe una categoría con ese nombre."
                 );
 
                 return;
             }
+
+        } catch (SQLException e) {
+
+            mostrarError(
+                    "No fue posible comprobar la categoría en la base de datos."
+            );
+
+            System.err.println(
+                    e.getMessage()
+            );
+
+            return;
         }
 
 

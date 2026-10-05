@@ -8,6 +8,43 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CategoriaDAO {
+
+    public boolean existeNombre(String nombre)
+            throws SQLException {
+
+        String sql = """
+            SELECT COUNT(*)
+            FROM categoria
+            WHERE LOWER(nombre) = LOWER(?)
+            """;
+
+        try (
+                Connection conexion =
+                        ConexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
+
+            ps.setString(
+                    1,
+                    nombre
+            );
+
+            try (
+                    ResultSet rs =
+                            ps.executeQuery()
+            ) {
+
+                if (rs.next()) {
+
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+
+        return false;
+    }
     public boolean guardar(Categoria categoria) {
 
         String sql = """
