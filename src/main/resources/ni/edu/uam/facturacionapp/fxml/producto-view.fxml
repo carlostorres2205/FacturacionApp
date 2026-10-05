@@ -148,6 +148,12 @@
                                 prefHeight="42.0"
                                 onAction="#agregarCategoria"/>
 
+                        <Button text="Editar categoría"
+                                onAction="#actualizarCategoria"/>
+
+                        <Button text="Eliminar categoría"
+                                onAction="#eliminarCategoria"/>
+
                     </HBox>
 
                 </VBox>

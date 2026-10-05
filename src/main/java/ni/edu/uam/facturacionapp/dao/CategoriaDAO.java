@@ -194,7 +194,7 @@ public class CategoriaDAO {
     }
 
 
-    public boolean actualizar(Categoria categoria) {
+    public boolean actualizar(Categoria categoria) throws SQLException {
 
         String sql = """
                 UPDATE categoria
@@ -228,15 +228,11 @@ public class CategoriaDAO {
 
             return ps.executeUpdate() > 0;
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
 
-        return false;
-    }
+    }}
 
 
-    public boolean eliminar(Integer id) {
+    public boolean eliminar(Integer id) throws SQLException {
 
         String sql = """
                 DELETE FROM categoria
@@ -255,10 +251,88 @@ public class CategoriaDAO {
 
             return ps.executeUpdate() > 0;
 
-        } catch (SQLException e) {
-            e.printStackTrace();
+        }
+    }
+
+    public boolean tieneProductos(int categoriaId)
+            throws SQLException {
+
+        String sql = """
+            SELECT COUNT(*)
+            FROM producto
+            WHERE categoria_id = ?
+            """;
+
+        try (
+                Connection conexion =
+                        ConexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
+
+            ps.setInt(
+                    1,
+                    categoriaId
+            );
+
+            try (
+                    ResultSet rs =
+                            ps.executeQuery()
+            ) {
+
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
         }
 
         return false;
     }
+
+    public boolean existeNombreOtro(
+            String nombre,
+            Integer id
+    ) throws SQLException {
+
+        String sql = """
+            SELECT COUNT(*)
+            FROM categoria
+            WHERE LOWER(nombre) = LOWER(?)
+            AND id <> ?
+            """;
+
+        try (
+                Connection conexion =
+                        ConexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
+
+            ps.setString(
+                    1,
+                    nombre
+            );
+
+            ps.setInt(
+                    2,
+                    id
+            );
+
+            try (
+                    ResultSet rs =
+                            ps.executeQuery()
+            ) {
+
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+
+        return false;
+    }
+
+
 }

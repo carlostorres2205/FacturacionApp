@@ -552,6 +552,238 @@ public class ProductoController {
         }
     }
 
+    @FXML
+    private void actualizarCategoria() {
+
+        Categoria seleccionada =
+                cbCategoria.getValue();
+
+        if (seleccionada == null) {
+
+            mostrarAdvertencia(
+                    "Debe seleccionar una categoría para actualizar."
+            );
+
+            return;
+        }
+
+
+        TextInputDialog dialogo =
+                new TextInputDialog(
+                        seleccionada.getNombre()
+                );
+
+        dialogo.setTitle(
+                "Actualizar categoría"
+        );
+
+        dialogo.setHeaderText(
+                "Modificar categoría"
+        );
+
+        dialogo.setContentText(
+                "Nuevo nombre:"
+        );
+
+
+        Optional<String> resultado =
+                dialogo.showAndWait();
+
+
+        if (resultado.isEmpty()) {
+            return;
+        }
+
+
+        String nuevoNombre =
+                resultado
+                        .get()
+                        .trim();
+
+
+        if (nuevoNombre.isEmpty()) {
+
+            mostrarAdvertencia(
+                    "El nombre de la categoría es obligatorio."
+            );
+
+            return;
+        }
+
+
+        try {
+
+            if (categoriaDAO.existeNombreOtro(
+                    nuevoNombre,
+                    seleccionada.getId()
+            )) {
+
+                mostrarAdvertencia(
+                        "Ya existe otra categoría con ese nombre."
+                );
+
+                return;
+            }
+
+
+            seleccionada.setNombre(
+                    nuevoNombre
+            );
+
+
+            boolean actualizada =
+                    categoriaDAO.actualizar(
+                            seleccionada
+                    );
+
+
+            if (actualizada) {
+
+                Integer idSeleccionado =
+                        seleccionada.getId();
+
+                cargarCategorias();
+
+                cargarProductos();
+
+
+                for (Categoria categoria :
+                        cbCategoria.getItems()) {
+
+                    if (categoria
+                            .getId()
+                            .equals(idSeleccionado)) {
+
+                        cbCategoria.setValue(
+                                categoria
+                        );
+
+                        break;
+                    }
+                }
+
+
+                lblEstado.setText(
+                        "Categoría actualizada correctamente."
+                );
+
+            } else {
+
+                mostrarError(
+                        "No se pudo actualizar la categoría."
+                );
+            }
+
+
+        } catch (SQLException e) {
+
+            mostrarError(
+                    "No fue posible actualizar la categoría en la base de datos."
+            );
+
+            System.err.println(
+                    e.getMessage()
+            );
+        }
+    }
+
+    @FXML
+    private void eliminarCategoria() {
+
+        Categoria seleccionada =
+                cbCategoria.getValue();
+
+        if (seleccionada == null) {
+
+            mostrarAdvertencia(
+                    "Debe seleccionar una categoría para eliminar."
+            );
+
+            return;
+        }
+
+
+        try {
+
+            if (categoriaDAO.tieneProductos(
+                    seleccionada.getId()
+            )) {
+
+                mostrarAdvertencia(
+                        "No puede eliminar la categoría porque tiene productos asociados."
+                );
+
+                return;
+            }
+
+
+            Alert confirmacion =
+                    new Alert(
+                            Alert.AlertType.CONFIRMATION
+                    );
+
+            confirmacion.setTitle(
+                    "Eliminar categoría"
+            );
+
+            confirmacion.setHeaderText(
+                    "¿Desea eliminar esta categoría?"
+            );
+
+            confirmacion.setContentText(
+                    seleccionada.getNombre()
+            );
+
+
+            Optional<ButtonType> respuesta =
+                    confirmacion.showAndWait();
+
+
+            if (respuesta.isEmpty()
+                    || respuesta.get() != ButtonType.OK) {
+
+                return;
+            }
+
+
+            boolean eliminada =
+                    categoriaDAO.eliminar(
+                            seleccionada.getId()
+                    );
+
+
+            if (eliminada) {
+
+                cbCategoria.setValue(null);
+
+                cargarCategorias();
+
+                cargarProductos();
+
+                lblEstado.setText(
+                        "Categoría eliminada correctamente."
+                );
+
+            } else {
+
+                mostrarError(
+                        "No se pudo eliminar la categoría."
+                );
+            }
+
+
+        } catch (SQLException e) {
+
+            mostrarError(
+                    "No fue posible eliminar la categoría de la base de datos."
+            );
+
+            System.err.println(
+                    e.getMessage()
+            );
+        }
+    }
+
 
     @FXML
     private void guardarProducto() {
@@ -1211,4 +1443,6 @@ public class ProductoController {
                 "Producto seleccionado para edición."
         );
     }
+
+
 }
