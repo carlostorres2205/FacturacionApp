@@ -241,6 +241,12 @@
                -fx-font-size: 14px;
                -fx-font-weight: bold;"/>
 
+                <Button fx:id="btnActualizar"
+                        text="Actualizar"
+                        prefHeight="42.0"
+                        prefWidth="130.0"
+                        onAction="#actualizarProducto"/>
+
             </HBox>
             <Label text="PRODUCTOS REGISTRADOS">
                 <font>

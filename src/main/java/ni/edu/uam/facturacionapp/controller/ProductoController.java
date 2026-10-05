@@ -85,6 +85,9 @@ public class ProductoController {
     @FXML
     private ComboBox<String> cbFiltroCategoria;
 
+    @FXML
+    private Producto productoSeleccionado;
+
 
 
 
@@ -95,7 +98,150 @@ public class ProductoController {
             new ProductoDAO();
 
 
+    @FXML
+    private void actualizarProducto() {
 
+        if (productoSeleccionado == null) {
+
+            mostrarAdvertencia(
+                    "Debe seleccionar un producto para actualizar."
+            );
+
+            return;
+        }
+
+
+        if (!validarFormulario()) {
+            return;
+        }
+
+
+        try {
+
+            String codigo =
+                    txtCodigo
+                            .getText()
+                            .trim();
+
+            String nombre =
+                    txtNombre
+                            .getText()
+                            .trim();
+
+            Categoria categoria =
+                    cbCategoria.getValue();
+
+            BigDecimal precioVenta =
+                    new BigDecimal(
+                            txtPrecio
+                                    .getText()
+                                    .trim()
+                    );
+
+            int existencia =
+                    Integer.parseInt(
+                            txtExistencia
+                                    .getText()
+                                    .trim()
+                    );
+
+            boolean activo =
+                    chkActivo.isSelected();
+
+
+            // VALIDAR QUE EL CÓDIGO NO SEA
+            // DE OTRO PRODUCTO
+
+            if (productoDAO.existeCodigoOtro(
+                    codigo,
+                    productoSeleccionado.getId()
+            )) {
+
+                mostrarAdvertencia(
+                        "Ya existe otro producto con ese código."
+                );
+
+                return;
+            }
+
+
+            // ACTUALIZAR OBJETO
+
+            productoSeleccionado.setCodigo(
+                    codigo
+            );
+
+            productoSeleccionado.setNombre(
+                    nombre
+            );
+
+            productoSeleccionado.setCategoria(
+                    categoria
+            );
+
+            productoSeleccionado.setPrecioVenta(
+                    precioVenta
+            );
+
+            productoSeleccionado.setExistencia(
+                    existencia
+            );
+
+            productoSeleccionado.setActivo(
+                    activo
+            );
+
+
+            // ACTUALIZAR BASE DE DATOS
+
+            boolean actualizado =
+                    productoDAO.actualizar(
+                            productoSeleccionado
+                    );
+
+
+            if (actualizado) {
+
+                cargarProductos();
+
+                limpiarFormulario();
+
+                productoSeleccionado = null;
+
+                tvProductos
+                        .getSelectionModel()
+                        .clearSelection();
+
+                lblEstado.setText(
+                        "Producto actualizado correctamente."
+                );
+
+            } else {
+
+                mostrarError(
+                        "No se pudo actualizar el producto."
+                );
+            }
+
+
+        } catch (NumberFormatException e) {
+
+            mostrarError(
+                    "Precio y existencia deben contener valores numéricos."
+            );
+
+
+        } catch (SQLException e) {
+
+            mostrarError(
+                    "No fue posible actualizar el producto en la base de datos."
+            );
+
+            System.err.println(
+                    e.getMessage()
+            );
+        }
+    }
 
     @FXML
     private void buscarProducto() {
@@ -140,6 +286,7 @@ public class ProductoController {
                         .getSelectionModel()
                         .getSelectedItem();
 
+
         if (seleccionado == null) {
 
             mostrarAdvertencia(
@@ -174,8 +321,14 @@ public class ProductoController {
                 confirmacion.showAndWait();
 
 
-        if (respuesta.isPresent()
-                && respuesta.get() == ButtonType.OK) {
+        if (respuesta.isEmpty()
+                || respuesta.get() != ButtonType.OK) {
+
+            return;
+        }
+
+
+        try {
 
             boolean eliminado =
                     productoDAO.eliminar(
@@ -186,6 +339,10 @@ public class ProductoController {
             if (eliminado) {
 
                 cargarProductos();
+
+                limpiarFormulario();
+
+                productoSeleccionado = null;
 
                 tvProductos
                         .getSelectionModel()
@@ -201,8 +358,21 @@ public class ProductoController {
                         "No se pudo eliminar el producto."
                 );
             }
+
+
+        } catch (SQLException e) {
+
+            mostrarError(
+                    "No fue posible eliminar el producto de la base de datos."
+            );
+
+            System.err.println(
+                    e.getMessage()
+            );
         }
     }
+
+
 
 
     @FXML
@@ -220,6 +390,10 @@ public class ProductoController {
 
         tvProductos.setItems(
                 productosFiltrados
+        );
+
+        tvProductos.setOnMouseClicked(
+                event -> cargarProductoSeleccionado()
         );
 
         configurarFiltros();
@@ -694,6 +868,12 @@ public class ProductoController {
         );
 
         txtCodigo.requestFocus();
+
+        productoSeleccionado = null;
+
+        tvProductos
+                .getSelectionModel()
+                .clearSelection();
     }
 
 
@@ -982,5 +1162,53 @@ public class ProductoController {
                     "Todas las categorías"
             );
         }
+
+
+    }
+    private void cargarProductoSeleccionado() {
+
+        Producto seleccionado =
+                tvProductos
+                        .getSelectionModel()
+                        .getSelectedItem();
+
+        if (seleccionado == null) {
+            return;
+        }
+
+        productoSeleccionado =
+                seleccionado;
+
+        txtCodigo.setText(
+                seleccionado.getCodigo()
+        );
+
+        txtNombre.setText(
+                seleccionado.getNombre()
+        );
+
+        cbCategoria.setValue(
+                seleccionado.getCategoria()
+        );
+
+        txtPrecio.setText(
+                seleccionado
+                        .getPrecioVenta()
+                        .toString()
+        );
+
+        txtExistencia.setText(
+                String.valueOf(
+                        seleccionado.getExistencia()
+                )
+        );
+
+        chkActivo.setSelected(
+                seleccionado.isActivo()
+        );
+
+        lblEstado.setText(
+                "Producto seleccionado para edición."
+        );
     }
 }

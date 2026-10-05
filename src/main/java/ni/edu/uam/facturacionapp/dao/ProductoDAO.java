@@ -267,12 +267,13 @@ public class ProductoDAO {
     }
 
 
-    public boolean eliminar(Integer id) {
+    public boolean eliminar(int id)
+            throws SQLException {
 
         String sql = """
-                DELETE FROM producto
-                WHERE id = ?
-                """;
+            DELETE FROM producto
+            WHERE id = ?
+            """;
 
         try (
                 Connection conexion =
@@ -282,15 +283,13 @@ public class ProductoDAO {
                         conexion.prepareStatement(sql)
         ) {
 
-            ps.setInt(1, id);
+            ps.setInt(
+                    1,
+                    id
+            );
 
             return ps.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-
-        return false;
     }
 
 
@@ -381,4 +380,50 @@ public class ProductoDAO {
 
         return false;
     }
+
+    public boolean existeCodigoOtro(
+            String codigo,
+            Integer id
+    ) throws SQLException {
+
+        String sql = """
+            SELECT COUNT(*)
+            FROM producto
+            WHERE codigo = ?
+            AND id <> ?
+            """;
+
+        try (
+                Connection conexion =
+                        ConexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
+
+            ps.setString(
+                    1,
+                    codigo
+            );
+
+            ps.setInt(
+                    2,
+                    id
+            );
+
+            try (
+                    ResultSet rs =
+                            ps.executeQuery()
+            ) {
+
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+
+        return false;
+    }
+
+
 }
