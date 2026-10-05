@@ -12,6 +12,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 
+import java.sql.SQLException;
 import java.util.Locale;
 
 import java.math.BigDecimal;
@@ -451,8 +452,21 @@ public class ProductoController {
                     activo
             );
 
+            if (productoDAO.existeCodigo(
+                    producto.getCodigo()
+            )) {
+
+                mostrarAdvertencia(
+                        "Ya existe un producto con ese código."
+                );
+
+                return;
+            }
+
 
             boolean guardado =
+
+
                     productoDAO.guardar(
                             producto
                     );
@@ -502,8 +516,18 @@ public class ProductoController {
             mostrarError(
                     "Precio y existencia deben contener valores numéricos."
             );
-        }
+        } catch (SQLException e) {
+
+            mostrarError(
+                    "No fue posible comprobar o guardar el producto."
+            );
+
+            System.err.println(
+                    e.getMessage()
+            );
     }
+    }
+
 
 
     private boolean validarFormulario() {
@@ -590,7 +614,7 @@ public class ProductoController {
 
             if (precio.compareTo(
                     BigDecimal.ZERO
-            ) < 0) {
+            ) <= 0) {
 
                 mostrarAdvertencia(
                         "El precio no puede ser negativo."

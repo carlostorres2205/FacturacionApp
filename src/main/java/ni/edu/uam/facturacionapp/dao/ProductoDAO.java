@@ -9,7 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProductoDAO {
+
+
     public boolean guardar(Producto producto) {
+
+
 
         String sql = """
                 INSERT INTO producto
@@ -350,5 +354,35 @@ public class ProductoDAO {
         );
 
         return producto;
+    }
+
+    public boolean existeCodigo(String codigo)
+            throws SQLException {
+
+        String sql = """
+            SELECT COUNT(*)
+            FROM producto
+            WHERE codigo = ?
+            """;
+
+        try (
+                Connection conexion =
+                        ConexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
+
+            ps.setString(1, codigo);
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+
+        return false;
     }
 }
