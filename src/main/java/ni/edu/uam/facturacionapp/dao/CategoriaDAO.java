@@ -8,7 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CategoriaDAO {
-    public boolean guardar(Categoria categoria) {
+
+    public boolean guardar(Categoria categoria) throws SQLException {
 
         String sql = """
                 INSERT INTO categoria (nombre, activa)
@@ -41,6 +42,7 @@ public class CategoriaDAO {
                 try (ResultSet rs = ps.getGeneratedKeys()) {
 
                     if (rs.next()) {
+
                         categoria.setId(
                                 rs.getInt(1)
                         );
@@ -49,16 +51,13 @@ public class CategoriaDAO {
 
                 return true;
             }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
 
         return false;
     }
 
 
-    public List<Categoria> listar() {
+    public List<Categoria> listar() throws SQLException {
 
         List<Categoria> categorias =
                 new ArrayList<>();
@@ -99,16 +98,13 @@ public class CategoriaDAO {
 
                 categorias.add(categoria);
             }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
 
         return categorias;
     }
 
 
-    public Categoria buscar(Integer id) {
+    public Categoria buscar(Integer id) throws SQLException {
 
         String sql = """
                 SELECT id, nombre, activa
@@ -124,7 +120,10 @@ public class CategoriaDAO {
                         conexion.prepareStatement(sql)
         ) {
 
-            ps.setInt(1, id);
+            ps.setInt(
+                    1,
+                    id
+            );
 
             try (ResultSet rs = ps.executeQuery()) {
 
@@ -148,16 +147,14 @@ public class CategoriaDAO {
                     return categoria;
                 }
             }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
 
         return null;
     }
 
 
-    public boolean actualizar(Categoria categoria) {
+    public boolean actualizar(Categoria categoria)
+            throws SQLException {
 
         String sql = """
                 UPDATE categoria
@@ -190,16 +187,12 @@ public class CategoriaDAO {
             );
 
             return ps.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-
-        return false;
     }
 
 
-    public boolean eliminar(Integer id) {
+    public boolean eliminar(Integer id)
+            throws SQLException {
 
         String sql = """
                 DELETE FROM categoria
@@ -214,12 +207,123 @@ public class CategoriaDAO {
                         conexion.prepareStatement(sql)
         ) {
 
-            ps.setInt(1, id);
+            ps.setInt(
+                    1,
+                    id
+            );
 
             return ps.executeUpdate() > 0;
+        }
+    }
 
-        } catch (SQLException e) {
-            e.printStackTrace();
+
+    public boolean existeNombre(String nombre)
+            throws SQLException {
+
+        String sql = """
+                SELECT COUNT(*)
+                FROM categoria
+                WHERE LOWER(nombre) = LOWER(?)
+                """;
+
+        try (
+                Connection conexion =
+                        ConexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
+
+            ps.setString(
+                    1,
+                    nombre
+            );
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                if (rs.next()) {
+
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+    public boolean existeNombre(
+            String nombre,
+            Integer idExcluir
+    ) throws SQLException {
+
+        String sql = """
+                SELECT COUNT(*)
+                FROM categoria
+                WHERE LOWER(nombre) = LOWER(?)
+                AND id <> ?
+                """;
+
+        try (
+                Connection conexion =
+                        ConexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
+
+            ps.setString(
+                    1,
+                    nombre
+            );
+
+            ps.setInt(
+                    2,
+                    idExcluir
+            );
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                if (rs.next()) {
+
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+    public boolean tieneProductos(Integer categoriaId)
+            throws SQLException {
+
+        String sql = """
+                SELECT COUNT(*)
+                FROM producto
+                WHERE categoria_id = ?
+                """;
+
+        try (
+                Connection conexion =
+                        ConexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
+
+            ps.setInt(
+                    1,
+                    categoriaId
+            );
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                if (rs.next()) {
+
+                    return rs.getInt(1) > 0;
+                }
+            }
         }
 
         return false;
