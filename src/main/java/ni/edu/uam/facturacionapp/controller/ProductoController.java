@@ -56,6 +56,9 @@ public class ProductoController {
     private Button btnEliminarCategoria;
 
     @FXML
+    private Button btnActualizarCategoria;
+
+    @FXML
     private Label lblEstado;
 
     @FXML
@@ -1308,6 +1311,122 @@ public class ProductoController {
 
             mostrarError(
                     "No fue posible eliminar la categoría."
+            );
+
+            System.err.println(
+                    e.getMessage()
+            );
+        }
+    }
+    @FXML
+    private void actualizarCategoria() {
+
+        Categoria seleccionada =
+                cbCategoria
+                        .getSelectionModel()
+                        .getSelectedItem();
+
+        if (seleccionada == null) {
+
+            mostrarAdvertencia(
+                    "Debe seleccionar la categoría que desea actualizar."
+            );
+
+            cbCategoria.requestFocus();
+
+            return;
+        }
+
+        TextInputDialog dialogo =
+                new TextInputDialog(
+                        seleccionada.getNombre()
+                );
+
+        dialogo.setTitle(
+                "Actualizar categoría"
+        );
+
+        dialogo.setHeaderText(
+                "Modificar categoría"
+        );
+
+        dialogo.setContentText(
+                "Nuevo nombre:"
+        );
+
+        Optional<String> resultado =
+                dialogo.showAndWait();
+
+        if (resultado.isEmpty()) {
+
+            return;
+        }
+
+        String nuevoNombre =
+                resultado
+                        .get()
+                        .trim();
+
+        if (nuevoNombre.isEmpty()) {
+
+            mostrarAdvertencia(
+                    "El nombre de la categoría es obligatorio."
+            );
+
+            return;
+        }
+
+        try {
+
+            if (categoriaDAO.existeNombre(
+                    nuevoNombre,
+                    seleccionada.getId()
+            )) {
+
+                mostrarAdvertencia(
+                        "Ya existe otra categoría con ese nombre."
+                );
+
+                return;
+            }
+
+            seleccionada.setNombre(
+                    nuevoNombre
+            );
+
+            boolean actualizada =
+                    categoriaDAO.actualizar(
+                            seleccionada
+                    );
+
+            if (actualizada) {
+
+                mostrarExito(
+                        "Categoría actualizada",
+                        "La categoría fue actualizada correctamente."
+                );
+
+                cargarCategorias();
+
+                seleccionarCategoriaPorId(
+                        seleccionada.getId()
+                );
+
+                actualizarCategoriasFiltro();
+
+                cargarProductos();
+
+            } else {
+
+                mostrarError(
+                        "No fue posible actualizar la categoría."
+                );
+            }
+
+        } catch (SQLException e) {
+
+            mostrarError(
+                    "No fue posible actualizar la categoría."
             );
 
             System.err.println(
