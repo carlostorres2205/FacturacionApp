@@ -6,7 +6,6 @@ import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-
 import ni.edu.uam.facturacionapp.dao.CategoriaDAO;
 import ni.edu.uam.facturacionapp.dao.ProductoDAO;
 import ni.edu.uam.facturacionapp.model.Categoria;
@@ -83,19 +82,13 @@ public class ProductoController {
     @FXML
     private ComboBox<String> cbFiltroCategoria;
 
-
-    private final CategoriaDAO categoriaDAO =
-            new CategoriaDAO();
-
-    private final ProductoDAO productoDAO =
-            new ProductoDAO();
-
+    private final CategoriaDAO categoriaDAO = new CategoriaDAO();
+    private final ProductoDAO productoDAO = new ProductoDAO();
 
     private final ObservableList<Producto> productos =
             FXCollections.observableArrayList();
 
     private FilteredList<Producto> productosFiltrados;
-
 
     @FXML
     public void initialize() {
@@ -121,46 +114,286 @@ public class ProductoController {
         chkActivo.setSelected(true);
     }
 
-
-
     @FXML
-    private void buscarProducto() {
+    private void guardarProducto() {
 
-        aplicarFiltros();
+        try {
+
+            Producto producto =
+                    obtenerProductoFormulario();
+
+            if (productoDAO.existeCodigo(
+                    producto.getCodigo()
+            )) {
+
+                mostrarAdvertencia(
+                        "Ya existe un producto con ese código."
+                );
+
+                txtCodigo.requestFocus();
+
+                return;
+            }
+
+            boolean guardado =
+                    productoDAO.guardar(
+                            producto
+                    );
+
+            if (guardado) {
+
+                mostrarExito(
+                        "Producto registrado",
+                        "El producto se guardó correctamente."
+                );
+
+                cargarProductos();
+
+                limpiarFormulario();
+
+            } else {
+
+                mostrarError(
+                        "No fue posible registrar el producto."
+                );
+            }
+
+        } catch (IllegalArgumentException e) {
+
+            mostrarAdvertencia(
+                    e.getMessage()
+            );
+
+        } catch (SQLException e) {
+
+            mostrarError(
+                    "No fue posible registrar el producto."
+            );
+
+            System.err.println(
+                    "Error al guardar producto: "
+                            + e.getMessage()
+            );
+        }
     }
 
+    private Producto obtenerProductoFormulario() {
 
-    @FXML
-    private void limpiarBusqueda() {
+        String codigo =
+                txtCodigo
+                        .getText()
+                        .trim();
 
-        txtBuscar.clear();
+        String nombre =
+                txtNombre
+                        .getText()
+                        .trim();
 
-        aplicarFiltros();
+        if (codigo.isEmpty()) {
 
-        txtBuscar.requestFocus();
+            txtCodigo.requestFocus();
+
+            throw new IllegalArgumentException(
+                    "El código es obligatorio."
+            );
+        }
+
+        if (nombre.isEmpty()) {
+
+            txtNombre.requestFocus();
+
+            throw new IllegalArgumentException(
+                    "El nombre es obligatorio."
+            );
+        }
+
+        Categoria categoria =
+                cbCategoria
+                        .getSelectionModel()
+                        .getSelectedItem();
+
+        if (categoria == null) {
+
+            cbCategoria.requestFocus();
+
+            throw new IllegalArgumentException(
+                    "Debe seleccionar una categoría."
+            );
+        }
+
+        BigDecimal precio;
+
+        try {
+
+            precio =
+                    new BigDecimal(
+                            txtPrecio
+                                    .getText()
+                                    .trim()
+                    );
+
+        } catch (NumberFormatException e) {
+
+            txtPrecio.requestFocus();
+
+            throw new IllegalArgumentException(
+                    "El precio debe ser un valor numérico."
+            );
+        }
+
+        if (precio.compareTo(
+                BigDecimal.ZERO
+        ) <= 0) {
+
+            txtPrecio.requestFocus();
+
+            throw new IllegalArgumentException(
+                    "El precio de venta debe ser mayor que cero."
+            );
+        }
+
+        int existencia;
+
+        try {
+
+            existencia =
+                    Integer.parseInt(
+                            txtExistencia
+                                    .getText()
+                                    .trim()
+                    );
+
+        } catch (NumberFormatException e) {
+
+            txtExistencia.requestFocus();
+
+            throw new IllegalArgumentException(
+                    "La existencia debe ser un número entero."
+            );
+        }
+
+        if (existencia < 0) {
+
+            txtExistencia.requestFocus();
+
+            throw new IllegalArgumentException(
+                    "La existencia no puede ser negativa."
+            );
+        }
+
+        Producto producto =
+                new Producto();
+
+        producto.setCodigo(
+                codigo
+        );
+
+        producto.setNombre(
+                nombre
+        );
+
+        producto.setCategoria(
+                categoria
+        );
+
+        producto.setPrecioVenta(
+                precio
+        );
+
+        producto.setExistencia(
+                existencia
+        );
+
+        producto.setActivo(
+                chkActivo.isSelected()
+        );
+
+        return producto;
     }
 
-
     @FXML
-    private void limpiarFiltros() {
+    private void eliminarProducto() {
 
-        txtBuscar.clear();
+        Producto seleccionado =
+                tvProductos
+                        .getSelectionModel()
+                        .getSelectedItem();
 
-        cbFiltroEstado.setValue(
-                "Todos"
+        if (seleccionado == null) {
+
+            mostrarAdvertencia(
+                    "Debe seleccionar un producto para eliminar."
+            );
+
+            return;
+        }
+
+        Alert confirmacion =
+                new Alert(
+                        Alert.AlertType.CONFIRMATION
+                );
+
+        confirmacion.setTitle(
+                "Eliminar producto"
         );
 
-        cbFiltroCategoria.setValue(
-                "Todas las categorías"
+        confirmacion.setHeaderText(
+                "¿Desea eliminar este producto?"
         );
 
-        aplicarFiltros();
-
-        lblEstado.setText(
-                "Mostrando todos los productos."
+        confirmacion.setContentText(
+                seleccionado.getCodigo()
+                        + " - "
+                        + seleccionado.getNombre()
         );
+
+        Optional<ButtonType> respuesta =
+                confirmacion.showAndWait();
+
+        if (respuesta.isEmpty()
+                || respuesta.get() != ButtonType.OK) {
+
+            return;
+        }
+
+        try {
+
+            boolean eliminado =
+                    productoDAO.eliminar(
+                            seleccionado.getId()
+                    );
+
+            if (eliminado) {
+
+                cargarProductos();
+
+                tvProductos
+                        .getSelectionModel()
+                        .clearSelection();
+
+                lblEstado.setText(
+                        "Producto eliminado correctamente."
+                );
+
+            } else {
+
+                mostrarError(
+                        "No fue posible eliminar el producto."
+                );
+            }
+
+        } catch (SQLException e) {
+
+            mostrarError(
+                    "No fue posible eliminar el producto."
+            );
+
+            System.err.println(
+                    "Error al eliminar producto: "
+                            + e.getMessage()
+            );
+        }
     }
-
 
     private void cargarCategorias() {
 
@@ -169,11 +402,15 @@ public class ProductoController {
             List<Categoria> categorias =
                     categoriaDAO.listar();
 
-            cbCategoria.getItems().clear();
+            cbCategoria
+                    .getItems()
+                    .clear();
 
-            cbCategoria.getItems().addAll(
-                    categorias
-            );
+            cbCategoria
+                    .getItems()
+                    .addAll(
+                            categorias
+                    );
 
             if (categorias.isEmpty()) {
 
@@ -201,7 +438,6 @@ public class ProductoController {
         }
     }
 
-
     @FXML
     private void agregarCategoria() {
 
@@ -220,22 +456,18 @@ public class ProductoController {
                 "Nombre:"
         );
 
-
         Optional<String> resultado =
                 dialogo.showAndWait();
-
 
         if (resultado.isEmpty()) {
 
             return;
         }
 
-
         String nombre =
                 resultado
                         .get()
                         .trim();
-
 
         if (nombre.isEmpty()) {
 
@@ -246,14 +478,11 @@ public class ProductoController {
             return;
         }
 
-
         try {
 
-            /*
-             * Verificamos directamente en la base de datos
-             * si existe una categoría con el mismo nombre.
-             */
-            if (categoriaDAO.existeNombre(nombre)) {
+            if (categoriaDAO.existeNombre(
+                    nombre
+            )) {
 
                 mostrarAdvertencia(
                         "Ya existe una categoría con ese nombre."
@@ -266,7 +495,6 @@ public class ProductoController {
                 return;
             }
 
-
             Categoria nuevaCategoria =
                     new Categoria();
 
@@ -278,12 +506,10 @@ public class ProductoController {
                     true
             );
 
-
             boolean guardada =
                     categoriaDAO.guardar(
                             nuevaCategoria
                     );
-
 
             if (guardada) {
 
@@ -302,7 +528,7 @@ public class ProductoController {
             } else {
 
                 mostrarError(
-                        "No se pudo guardar la categoría."
+                        "No fue posible registrar la categoría."
                 );
             }
 
@@ -319,7 +545,6 @@ public class ProductoController {
         }
     }
 
-
     private void seleccionarCategoriaPorNombre(
             String nombre
     ) {
@@ -329,7 +554,9 @@ public class ProductoController {
 
             if (categoria
                     .getNombre()
-                    .equalsIgnoreCase(nombre)) {
+                    .equalsIgnoreCase(
+                            nombre
+                    )) {
 
                 cbCategoria.setValue(
                         categoria
@@ -340,7 +567,6 @@ public class ProductoController {
         }
     }
 
-
     private void seleccionarCategoriaPorId(
             Integer id
     ) {
@@ -349,7 +575,6 @@ public class ProductoController {
 
             return;
         }
-
 
         for (Categoria categoria :
                 cbCategoria.getItems()) {
@@ -368,455 +593,28 @@ public class ProductoController {
         }
     }
 
-
-
-
-    @FXML
-    private void guardarProducto() {
-
-        if (!validarFormulario()) {
-
-            return;
-        }
-
+    private void cargarProductos() {
 
         try {
 
-            String codigo =
-                    txtCodigo
-                            .getText()
-                            .trim();
+            productos.clear();
 
-            String nombre =
-                    txtNombre
-                            .getText()
-                            .trim();
-
-            Categoria categoria =
-                    cbCategoria
-                            .getValue();
-
-            BigDecimal precioVenta =
-                    new BigDecimal(
-                            txtPrecio
-                                    .getText()
-                                    .trim()
-                    );
-
-            int existencia =
-                    Integer.parseInt(
-                            txtExistencia
-                                    .getText()
-                                    .trim()
-                    );
-
-            boolean activo =
-                    chkActivo
-                            .isSelected();
-
-
-            Producto producto =
-                    new Producto();
-
-            producto.setCodigo(
-                    codigo
+            productos.addAll(
+                    productoDAO.listar()
             );
 
-            producto.setNombre(
-                    nombre
-            );
-
-            producto.setCategoria(
-                    categoria
-            );
-
-            producto.setPrecioVenta(
-                    precioVenta
-            );
-
-            producto.setExistencia(
-                    existencia
-            );
-
-
-            producto.setActivo(
-                    activo
-            );
-
-
-            boolean guardado =
-                    productoDAO.guardar(
-                            producto
-                    );
-
-
-            if (guardado) {
-
-                Alert alerta =
-                        new Alert(
-                                Alert.AlertType.INFORMATION
-                        );
-
-                alerta.setTitle(
-                        "Producto guardado"
-                );
-
-                alerta.setHeaderText(
-                        "Registro exitoso"
-                );
-
-                alerta.setContentText(
-                        "El producto "
-                                + producto.getNombre()
-                                + " fue guardado correctamente."
-                );
-
-                alerta.showAndWait();
-
-
-                lblEstado.setText(
-                        "Producto guardado correctamente."
-                );
-
-                cargarProductos();
-
-                limpiarFormulario();
-
-            } else {
-
-                mostrarError(
-                        "No se pudo guardar el producto."
-                );
-            }
-
-        } catch (NumberFormatException e) {
+        } catch (SQLException e) {
 
             mostrarError(
-                    "Precio y existencia deben contener valores numéricos."
+                    "No fue posible cargar los productos."
+            );
+
+            System.err.println(
+                    "Error al cargar productos: "
+                            + e.getMessage()
             );
         }
     }
-
-
-    private boolean validarFormulario() {
-
-        if (txtCodigo
-                .getText()
-                .trim()
-                .isEmpty()) {
-
-            mostrarAdvertencia(
-                    "Debe ingresar el código."
-            );
-
-            txtCodigo.requestFocus();
-
-            return false;
-        }
-
-
-        if (txtNombre
-                .getText()
-                .trim()
-                .isEmpty()) {
-
-            mostrarAdvertencia(
-                    "Debe ingresar el nombre."
-            );
-
-            txtNombre.requestFocus();
-
-            return false;
-        }
-
-
-        if (cbCategoria
-                .getValue() == null) {
-
-            mostrarAdvertencia(
-                    "Debe seleccionar una categoría."
-            );
-
-            cbCategoria.requestFocus();
-
-            return false;
-        }
-
-
-        if (txtPrecio
-                .getText()
-                .trim()
-                .isEmpty()) {
-
-            mostrarAdvertencia(
-                    "Debe ingresar el precio."
-            );
-
-            txtPrecio.requestFocus();
-
-            return false;
-        }
-
-
-        if (txtExistencia
-                .getText()
-                .trim()
-                .isEmpty()) {
-
-            mostrarAdvertencia(
-                    "Debe ingresar la existencia."
-            );
-
-            txtExistencia.requestFocus();
-
-            return false;
-        }
-
-
-        try {
-
-            BigDecimal precio =
-                    new BigDecimal(
-                            txtPrecio
-                                    .getText()
-                                    .trim()
-                    );
-
-            /*
-             * La práctica indica que el precio
-             * debe ser MAYOR que cero.
-             */
-            if (precio.compareTo(
-                    BigDecimal.ZERO
-            ) <= 0) {
-
-                mostrarAdvertencia(
-                        "El precio de venta debe ser mayor que cero."
-                );
-
-                txtPrecio.requestFocus();
-
-                return false;
-            }
-
-        } catch (NumberFormatException e) {
-
-            mostrarAdvertencia(
-                    "El precio debe ser un valor numérico."
-            );
-
-            txtPrecio.requestFocus();
-
-            return false;
-        }
-
-
-        try {
-
-            int existencia =
-                    Integer.parseInt(
-                            txtExistencia
-                                    .getText()
-                                    .trim()
-                    );
-
-            if (existencia < 0) {
-
-                mostrarAdvertencia(
-                        "La existencia no puede ser negativa."
-                );
-
-                txtExistencia.requestFocus();
-
-                return false;
-            }
-
-        } catch (NumberFormatException e) {
-
-            mostrarAdvertencia(
-                    "La existencia debe ser un número entero."
-            );
-
-            txtExistencia.requestFocus();
-
-            return false;
-        }
-
-
-        return true;
-    }
-
-
-
-
-    @FXML
-    private void eliminarProducto() {
-
-        Producto seleccionado =
-                tvProductos
-                        .getSelectionModel()
-                        .getSelectedItem();
-
-
-        if (seleccionado == null) {
-
-            mostrarAdvertencia(
-                    "Debe seleccionar un producto para eliminar."
-            );
-
-            return;
-        }
-
-
-        Alert confirmacion =
-                new Alert(
-                        Alert.AlertType.CONFIRMATION
-                );
-
-        confirmacion.setTitle(
-                "Eliminar producto"
-        );
-
-        confirmacion.setHeaderText(
-                "¿Desea eliminar este producto?"
-        );
-
-        confirmacion.setContentText(
-                seleccionado.getCodigo()
-                        + " - "
-                        + seleccionado.getNombre()
-        );
-
-
-        Optional<ButtonType> respuesta =
-                confirmacion.showAndWait();
-
-
-        if (respuesta.isPresent()
-                && respuesta.get()
-                == ButtonType.OK) {
-
-            boolean eliminado =
-                    productoDAO.eliminar(
-                            seleccionado.getId()
-                    );
-
-
-            if (eliminado) {
-
-                cargarProductos();
-
-                tvProductos
-                        .getSelectionModel()
-                        .clearSelection();
-
-                lblEstado.setText(
-                        "Producto eliminado correctamente."
-                );
-
-            } else {
-
-                mostrarError(
-                        "No se pudo eliminar el producto."
-                );
-            }
-        }
-    }
-
-
-
-
-    @FXML
-    private void limpiarFormulario() {
-
-        txtCodigo.clear();
-
-        txtNombre.clear();
-
-        cbCategoria.setValue(
-                null
-        );
-
-        txtPrecio.clear();
-
-        txtExistencia.clear();
-
-        chkActivo.setSelected(
-                true
-        );
-
-        tvProductos
-                .getSelectionModel()
-                .clearSelection();
-
-        lblEstado.setText(
-                "Formulario limpiado."
-        );
-
-        txtCodigo.requestFocus();
-    }
-
-
-
-
-    private void mostrarAdvertencia(
-            String mensaje
-    ) {
-
-        Alert alerta =
-                new Alert(
-                        Alert.AlertType.WARNING
-                );
-
-        alerta.setTitle(
-                "Validación"
-        );
-
-        alerta.setHeaderText(
-                null
-        );
-
-        alerta.setContentText(
-                mensaje
-        );
-
-        alerta.showAndWait();
-
-        lblEstado.setText(
-                mensaje
-        );
-    }
-
-
-    private void mostrarError(
-            String mensaje
-    ) {
-
-        Alert alerta =
-                new Alert(
-                        Alert.AlertType.ERROR
-                );
-
-        alerta.setTitle(
-                "Error"
-        );
-
-        alerta.setHeaderText(
-                "Ocurrió un problema"
-        );
-
-        alerta.setContentText(
-                mensaje
-        );
-
-        alerta.showAndWait();
-
-        lblEstado.setText(
-                mensaje
-        );
-    }
-
-
 
     private void configurarTabla() {
 
@@ -851,45 +649,112 @@ public class ProductoController {
         );
 
         colCategoria.setCellValueFactory(
-                datos ->
-                        new javafx.beans.property.SimpleStringProperty(
-                                datos
-                                        .getValue()
-                                        .getCategoria()
-                                        .getNombre()
-                        )
+                datos -> {
+
+                    Producto producto =
+                            datos.getValue();
+
+                    if (producto.getCategoria() == null) {
+
+                        return new javafx.beans.property.SimpleStringProperty(
+                                ""
+                        );
+                    }
+
+                    return new javafx.beans.property.SimpleStringProperty(
+                            producto
+                                    .getCategoria()
+                                    .getNombre()
+                    );
+                }
         );
     }
 
+    @FXML
+    private void limpiarFormulario() {
 
+        txtCodigo.clear();
 
-    private void cargarProductos() {
+        txtNombre.clear();
 
-        productos.clear();
-
-        productos.addAll(
-                productoDAO.listar()
+        cbCategoria.setValue(
+                null
         );
+
+        txtPrecio.clear();
+
+        txtExistencia.clear();
+
+        chkActivo.setSelected(
+                true
+        );
+
+        tvProductos
+                .getSelectionModel()
+                .clearSelection();
+
+        lblEstado.setText(
+                "Formulario limpiado."
+        );
+
+        txtCodigo.requestFocus();
     }
 
+    @FXML
+    private void buscarProducto() {
 
-    private void configurarFiltros() {
+        aplicarFiltros();
+    }
 
-        cbFiltroEstado.getItems().clear();
+    @FXML
+    private void limpiarBusqueda() {
 
-        cbFiltroEstado.getItems().addAll(
-                "Todos",
-                "Activos",
-                "Inactivos"
-        );
+        txtBuscar.clear();
+
+        aplicarFiltros();
+
+        txtBuscar.requestFocus();
+    }
+
+    @FXML
+    private void limpiarFiltros() {
+
+        txtBuscar.clear();
 
         cbFiltroEstado.setValue(
                 "Todos"
         );
 
+        cbFiltroCategoria.setValue(
+                "Todas las categorías"
+        );
+
+        aplicarFiltros();
+
+        lblEstado.setText(
+                "Mostrando todos los productos."
+        );
+    }
+
+    private void configurarFiltros() {
+
+        cbFiltroEstado
+                .getItems()
+                .clear();
+
+        cbFiltroEstado
+                .getItems()
+                .addAll(
+                        "Todos",
+                        "Activos",
+                        "Inactivos"
+                );
+
+        cbFiltroEstado.setValue(
+                "Todos"
+        );
 
         actualizarCategoriasFiltro();
-
 
         cbFiltroEstado.setOnAction(
                 event -> aplicarFiltros()
@@ -900,158 +765,15 @@ public class ProductoController {
         );
     }
 
-
-    private void aplicarFiltros() {
-
-        String texto =
-                txtBuscar
-                        .getText()
-                        .trim()
-                        .toLowerCase(
-                                Locale.ROOT
-                        );
-
-
-        String estado =
-                cbFiltroEstado.getValue();
-
-
-        String categoriaSeleccionada =
-                cbFiltroCategoria.getValue();
-
-
-        productosFiltrados.setPredicate(
-                producto -> {
-
-
-                    boolean coincideBusqueda;
-
-
-                    if (texto.isEmpty()) {
-
-                        coincideBusqueda =
-                                true;
-
-                    } else {
-
-                        String codigo =
-                                producto.getCodigo() == null
-                                        ? ""
-                                        : producto
-                                        .getCodigo()
-                                        .toLowerCase(
-                                                Locale.ROOT
-                                        );
-
-
-                        String nombre =
-                                producto.getNombre() == null
-                                        ? ""
-                                        : producto
-                                        .getNombre()
-                                        .toLowerCase(
-                                                Locale.ROOT
-                                        );
-
-
-                        String categoria =
-                                "";
-
-
-                        if (producto.getCategoria() != null
-                                && producto
-                                .getCategoria()
-                                .getNombre() != null) {
-
-                            categoria =
-                                    producto
-                                            .getCategoria()
-                                            .getNombre()
-                                            .toLowerCase(
-                                                    Locale.ROOT
-                                            );
-                        }
-
-
-                        coincideBusqueda =
-                                codigo.contains(
-                                        texto
-                                )
-                                        || nombre.contains(
-                                        texto
-                                )
-                                        || categoria.contains(
-                                        texto
-                                );
-                    }
-
-
-                    boolean coincideEstado =
-                            true;
-
-
-                    if ("Activos".equals(
-                            estado
-                    )) {
-
-                        coincideEstado =
-                                producto.isActivo();
-
-                    } else if ("Inactivos".equals(
-                            estado
-                    )) {
-
-                        coincideEstado =
-                                !producto.isActivo();
-                    }
-
-
-
-                    boolean coincideCategoria =
-                            true;
-
-
-                    if (categoriaSeleccionada != null
-                            && !"Todas las categorías"
-                            .equals(
-                                    categoriaSeleccionada
-                            )) {
-
-                        coincideCategoria =
-                                producto.getCategoria() != null
-                                        && producto
-                                        .getCategoria()
-                                        .getNombre()
-                                        .equalsIgnoreCase(
-                                                categoriaSeleccionada
-                                        );
-                    }
-
-
-                    return coincideBusqueda
-                            && coincideEstado
-                            && coincideCategoria;
-                }
-        );
-
-
-        lblEstado.setText(
-                "Productos encontrados: "
-                        + productosFiltrados.size()
-        );
-    }
-
-
     private void actualizarCategoriasFiltro() {
 
         String seleccionActual =
-                cbFiltroCategoria.getValue();
-
+                cbFiltroCategoria
+                        .getValue();
 
         cbFiltroCategoria
                 .getItems()
                 .clear();
-
 
         cbFiltroCategoria
                 .getItems()
@@ -1059,12 +781,10 @@ public class ProductoController {
                         "Todas las categorías"
                 );
 
-
         try {
 
             List<Categoria> categorias =
                     categoriaDAO.listar();
-
 
             for (Categoria categoria :
                     categorias) {
@@ -1075,7 +795,6 @@ public class ProductoController {
                                 categoria.getNombre()
                         );
             }
-
 
             if (seleccionActual != null
                     && cbFiltroCategoria
@@ -1101,14 +820,217 @@ public class ProductoController {
                     "Todas las categorías"
             );
 
-            mostrarError(
-                    "No fue posible cargar las categorías del filtro."
-            );
-
             System.err.println(
                     "Error al cargar categorías del filtro: "
                             + e.getMessage()
             );
         }
+    }
+
+    private void aplicarFiltros() {
+
+        String texto =
+                txtBuscar
+                        .getText()
+                        .trim()
+                        .toLowerCase(
+                                Locale.ROOT
+                        );
+
+        String estado =
+                cbFiltroEstado
+                        .getValue();
+
+        String categoriaSeleccionada =
+                cbFiltroCategoria
+                        .getValue();
+
+        productosFiltrados.setPredicate(
+                producto -> {
+
+                    boolean coincideBusqueda;
+
+                    if (texto.isEmpty()) {
+
+                        coincideBusqueda = true;
+
+                    } else {
+
+                        String codigo =
+                                producto.getCodigo() == null
+                                        ? ""
+                                        : producto
+                                        .getCodigo()
+                                        .toLowerCase(
+                                                Locale.ROOT
+                                        );
+
+                        String nombre =
+                                producto.getNombre() == null
+                                        ? ""
+                                        : producto
+                                        .getNombre()
+                                        .toLowerCase(
+                                                Locale.ROOT
+                                        );
+
+                        String categoria = "";
+
+                        if (producto.getCategoria() != null
+                                && producto
+                                .getCategoria()
+                                .getNombre() != null) {
+
+                            categoria =
+                                    producto
+                                            .getCategoria()
+                                            .getNombre()
+                                            .toLowerCase(
+                                                    Locale.ROOT
+                                            );
+                        }
+
+                        coincideBusqueda =
+                                codigo.contains(
+                                        texto
+                                )
+                                        || nombre.contains(
+                                        texto
+                                )
+                                        || categoria.contains(
+                                        texto
+                                );
+                    }
+
+                    boolean coincideEstado = true;
+
+                    if ("Activos".equals(
+                            estado
+                    )) {
+
+                        coincideEstado =
+                                producto.isActivo();
+
+                    } else if ("Inactivos".equals(
+                            estado
+                    )) {
+
+                        coincideEstado =
+                                !producto.isActivo();
+                    }
+
+                    boolean coincideCategoria = true;
+
+                    if (categoriaSeleccionada != null
+                            && !"Todas las categorías"
+                            .equals(
+                                    categoriaSeleccionada
+                            )) {
+
+                        coincideCategoria =
+                                producto.getCategoria() != null
+                                        && producto
+                                        .getCategoria()
+                                        .getNombre()
+                                        .equalsIgnoreCase(
+                                                categoriaSeleccionada
+                                        );
+                    }
+
+                    return coincideBusqueda
+                            && coincideEstado
+                            && coincideCategoria;
+                }
+        );
+
+        lblEstado.setText(
+                "Productos encontrados: "
+                        + productosFiltrados.size()
+        );
+    }
+
+    private void mostrarAdvertencia(
+            String mensaje
+    ) {
+
+        Alert alerta =
+                new Alert(
+                        Alert.AlertType.WARNING
+                );
+
+        alerta.setTitle(
+                "Validación"
+        );
+
+        alerta.setHeaderText(
+                null
+        );
+
+        alerta.setContentText(
+                mensaje
+        );
+
+        alerta.showAndWait();
+
+        lblEstado.setText(
+                mensaje
+        );
+    }
+
+    private void mostrarError(
+            String mensaje
+    ) {
+
+        Alert alerta =
+                new Alert(
+                        Alert.AlertType.ERROR
+                );
+
+        alerta.setTitle(
+                "Error"
+        );
+
+        alerta.setHeaderText(
+                null
+        );
+
+        alerta.setContentText(
+                mensaje
+        );
+
+        alerta.showAndWait();
+
+        lblEstado.setText(
+                mensaje
+        );
+    }
+
+    private void mostrarExito(
+            String titulo,
+            String mensaje
+    ) {
+
+        Alert alerta =
+                new Alert(
+                        Alert.AlertType.INFORMATION
+                );
+
+        alerta.setTitle(
+                titulo
+        );
+
+        alerta.setHeaderText(
+                null
+        );
+
+        alerta.setContentText(
+                mensaje
+        );
+
+        alerta.showAndWait();
+
+        lblEstado.setText(
+                mensaje
+        );
     }
 }
