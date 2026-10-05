@@ -9,7 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProductoDAO {
-    public boolean guardar(Producto producto) {
+
+
+    public boolean guardar(Producto producto)
+            throws SQLException {
 
         String sql = """
                 INSERT INTO producto
@@ -19,10 +22,9 @@ public class ProductoDAO {
                     categoria_id,
                     precio_venta,
                     existencia,
-                    ruta_imagen,
                     activo
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """;
 
         try (
@@ -61,23 +63,22 @@ public class ProductoDAO {
                     producto.getExistencia()
             );
 
-            ps.setString(
-                    6,
-                    producto.getRutaImagen()
-            );
-
             ps.setBoolean(
-                    7,
+                    6,
                     producto.isActivo()
             );
+
 
             int filasAfectadas =
                     ps.executeUpdate();
 
+
             if (filasAfectadas > 0) {
 
-                try (ResultSet rs =
-                             ps.getGeneratedKeys()) {
+                try (
+                        ResultSet rs =
+                                ps.getGeneratedKeys()
+                ) {
 
                     if (rs.next()) {
 
@@ -89,19 +90,18 @@ public class ProductoDAO {
 
                 return true;
             }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
 
         return false;
     }
 
 
-    public List<Producto> listar() {
+    public List<Producto> listar()
+            throws SQLException {
 
         List<Producto> productos =
                 new ArrayList<>();
+
 
         String sql = """
                 SELECT
@@ -110,7 +110,6 @@ public class ProductoDAO {
                     p.nombre,
                     p.precio_venta,
                     p.existencia,
-                    p.ruta_imagen,
                     p.activo,
                     c.id AS categoria_id,
                     c.nombre AS categoria_nombre,
@@ -120,6 +119,7 @@ public class ProductoDAO {
                     ON p.categoria_id = c.id
                 ORDER BY p.id
                 """;
+
 
         try (
                 Connection conexion =
@@ -134,21 +134,66 @@ public class ProductoDAO {
 
             while (rs.next()) {
 
+                Categoria categoria =
+                        new Categoria();
+
+                categoria.setId(
+                        rs.getInt("categoria_id")
+                );
+
+                categoria.setNombre(
+                        rs.getString("categoria_nombre")
+                );
+
+                categoria.setActiva(
+                        rs.getBoolean("categoria_activa")
+                );
+
+
                 Producto producto =
-                        construirProducto(rs);
+                        new Producto();
 
-                productos.add(producto);
+                producto.setId(
+                        rs.getInt("id")
+                );
+
+                producto.setCodigo(
+                        rs.getString("codigo")
+                );
+
+                producto.setNombre(
+                        rs.getString("nombre")
+                );
+
+                producto.setCategoria(
+                        categoria
+                );
+
+                producto.setPrecioVenta(
+                        rs.getBigDecimal("precio_venta")
+                );
+
+                producto.setExistencia(
+                        rs.getInt("existencia")
+                );
+
+                producto.setActivo(
+                        rs.getBoolean("activo")
+                );
+
+
+                productos.add(
+                        producto
+                );
             }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
 
         return productos;
     }
 
 
-    public Producto buscar(Integer id) {
+    public Producto buscar(Integer id)
+            throws SQLException {
 
         String sql = """
                 SELECT
@@ -157,7 +202,6 @@ public class ProductoDAO {
                     p.nombre,
                     p.precio_venta,
                     p.existencia,
-                    p.ruta_imagen,
                     p.activo,
                     c.id AS categoria_id,
                     c.nombre AS categoria_nombre,
@@ -168,6 +212,7 @@ public class ProductoDAO {
                 WHERE p.id = ?
                 """;
 
+
         try (
                 Connection conexion =
                         ConexionBD.getConnection();
@@ -176,38 +221,91 @@ public class ProductoDAO {
                         conexion.prepareStatement(sql)
         ) {
 
-            ps.setInt(1, id);
+            ps.setInt(
+                    1,
+                    id
+            );
 
-            try (ResultSet rs =
-                         ps.executeQuery()) {
+
+            try (
+                    ResultSet rs =
+                            ps.executeQuery()
+            ) {
 
                 if (rs.next()) {
 
-                    return construirProducto(rs);
+                    Categoria categoria =
+                            new Categoria();
+
+                    categoria.setId(
+                            rs.getInt("categoria_id")
+                    );
+
+                    categoria.setNombre(
+                            rs.getString("categoria_nombre")
+                    );
+
+                    categoria.setActiva(
+                            rs.getBoolean("categoria_activa")
+                    );
+
+
+                    Producto producto =
+                            new Producto();
+
+                    producto.setId(
+                            rs.getInt("id")
+                    );
+
+                    producto.setCodigo(
+                            rs.getString("codigo")
+                    );
+
+                    producto.setNombre(
+                            rs.getString("nombre")
+                    );
+
+                    producto.setCategoria(
+                            categoria
+                    );
+
+                    producto.setPrecioVenta(
+                            rs.getBigDecimal("precio_venta")
+                    );
+
+                    producto.setExistencia(
+                            rs.getInt("existencia")
+                    );
+
+                    producto.setActivo(
+                            rs.getBoolean("activo")
+                    );
+
+
+                    return producto;
                 }
             }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
 
         return null;
     }
 
 
-    public boolean actualizar(Producto producto) {
+    public boolean actualizar(Producto producto)
+            throws SQLException {
 
         String sql = """
                 UPDATE producto
-                SET codigo = ?,
+                SET
+                    codigo = ?,
                     nombre = ?,
                     categoria_id = ?,
                     precio_venta = ?,
                     existencia = ?,
-                    ruta_imagen = ?,
                     activo = ?
                 WHERE id = ?
                 """;
+
 
         try (
                 Connection conexion =
@@ -242,37 +340,30 @@ public class ProductoDAO {
                     producto.getExistencia()
             );
 
-            ps.setString(
-                    6,
-                    producto.getRutaImagen()
-            );
-
             ps.setBoolean(
-                    7,
+                    6,
                     producto.isActivo()
             );
 
             ps.setInt(
-                    8,
+                    7,
                     producto.getId()
             );
 
+
             return ps.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-
-        return false;
     }
 
 
-    public boolean eliminar(Integer id) {
+    public boolean eliminar(Integer id)
+            throws SQLException {
 
         String sql = """
                 DELETE FROM producto
                 WHERE id = ?
                 """;
+
 
         try (
                 Connection conexion =
@@ -282,73 +373,100 @@ public class ProductoDAO {
                         conexion.prepareStatement(sql)
         ) {
 
-            ps.setInt(1, id);
+            ps.setInt(
+                    1,
+                    id
+            );
 
             return ps.executeUpdate() > 0;
+        }
+    }
 
-        } catch (SQLException e) {
-            e.printStackTrace();
+
+    public boolean existeCodigo(String codigo)
+            throws SQLException {
+
+        String sql = """
+                SELECT COUNT(*)
+                FROM producto
+                WHERE codigo = ?
+                """;
+
+
+        try (
+                Connection conexion =
+                        ConexionBD.getConnection();
+
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
+
+            ps.setString(
+                    1,
+                    codigo
+            );
+
+
+            try (
+                    ResultSet rs =
+                            ps.executeQuery()
+            ) {
+
+                if (rs.next()) {
+
+                    return rs.getInt(1) > 0;
+                }
+            }
         }
 
         return false;
     }
 
 
-    private Producto construirProducto(
-            ResultSet rs
+    public boolean existeCodigo(
+            String codigo,
+            Integer idExcluir
     ) throws SQLException {
 
-        Categoria categoria =
-                new Categoria();
-
-        categoria.setId(
-                rs.getInt("categoria_id")
-        );
-
-        categoria.setNombre(
-                rs.getString("categoria_nombre")
-        );
-
-        categoria.setActiva(
-                rs.getBoolean("categoria_activa")
-        );
+        String sql = """
+                SELECT COUNT(*)
+                FROM producto
+                WHERE codigo = ?
+                AND id <> ?
+                """;
 
 
-        Producto producto =
-                new Producto();
+        try (
+                Connection conexion =
+                        ConexionBD.getConnection();
 
-        producto.setId(
-                rs.getInt("id")
-        );
+                PreparedStatement ps =
+                        conexion.prepareStatement(sql)
+        ) {
 
-        producto.setCodigo(
-                rs.getString("codigo")
-        );
+            ps.setString(
+                    1,
+                    codigo
+            );
 
-        producto.setNombre(
-                rs.getString("nombre")
-        );
+            ps.setInt(
+                    2,
+                    idExcluir
+            );
 
-        producto.setCategoria(
-                categoria
-        );
 
-        producto.setPrecioVenta(
-                rs.getBigDecimal("precio_venta")
-        );
+            try (
+                    ResultSet rs =
+                            ps.executeQuery()
+            ) {
 
-        producto.setExistencia(
-                rs.getInt("existencia")
-        );
+                if (rs.next()) {
 
-        producto.setRutaImagen(
-                rs.getString("ruta_imagen")
-        );
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
 
-        producto.setActivo(
-                rs.getBoolean("activo")
-        );
-
-        return producto;
+        return false;
     }
 }

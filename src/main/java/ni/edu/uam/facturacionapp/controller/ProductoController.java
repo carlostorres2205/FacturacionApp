@@ -1,21 +1,21 @@
 package ni.edu.uam.facturacionapp.controller;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 
 import ni.edu.uam.facturacionapp.dao.CategoriaDAO;
 import ni.edu.uam.facturacionapp.dao.ProductoDAO;
 import ni.edu.uam.facturacionapp.model.Categoria;
 import ni.edu.uam.facturacionapp.model.Producto;
-import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
-
-import java.util.Locale;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 public class ProductoController {
@@ -49,7 +49,6 @@ public class ProductoController {
 
     @FXML
     private Button btnEliminar;
-
 
     @FXML
     private Label lblEstado;
@@ -85,8 +84,6 @@ public class ProductoController {
     private ComboBox<String> cbFiltroCategoria;
 
 
-
-
     private final CategoriaDAO categoriaDAO =
             new CategoriaDAO();
 
@@ -94,114 +91,10 @@ public class ProductoController {
             new ProductoDAO();
 
 
+    private final ObservableList<Producto> productos =
+            FXCollections.observableArrayList();
 
-
-    @FXML
-    private void buscarProducto() {
-        aplicarFiltros();
-    }
-
-    @FXML
-    private void limpiarBusqueda() {
-
-        txtBuscar.clear();
-
-        aplicarFiltros();
-
-        txtBuscar.requestFocus();
-    }
-
-    @FXML
-    private void limpiarFiltros() {
-
-        txtBuscar.clear();
-
-        cbFiltroEstado.setValue(
-                "Todos"
-        );
-
-        cbFiltroCategoria.setValue(
-                "Todas las categorías"
-        );
-
-        aplicarFiltros();
-
-        lblEstado.setText(
-                "Mostrando todos los productos."
-        );
-    }
-
-    @FXML
-    private void eliminarProducto() {
-
-        Producto seleccionado =
-                tvProductos
-                        .getSelectionModel()
-                        .getSelectedItem();
-
-        if (seleccionado == null) {
-
-            mostrarAdvertencia(
-                    "Debe seleccionar un producto para eliminar."
-            );
-
-            return;
-        }
-
-
-        Alert confirmacion =
-                new Alert(
-                        Alert.AlertType.CONFIRMATION
-                );
-
-        confirmacion.setTitle(
-                "Eliminar producto"
-        );
-
-        confirmacion.setHeaderText(
-                "¿Desea eliminar este producto?"
-        );
-
-        confirmacion.setContentText(
-                seleccionado.getCodigo()
-                        + " - "
-                        + seleccionado.getNombre()
-        );
-
-
-        Optional<ButtonType> respuesta =
-                confirmacion.showAndWait();
-
-
-        if (respuesta.isPresent()
-                && respuesta.get() == ButtonType.OK) {
-
-            boolean eliminado =
-                    productoDAO.eliminar(
-                            seleccionado.getId()
-                    );
-
-
-            if (eliminado) {
-
-                cargarProductos();
-
-                tvProductos
-                        .getSelectionModel()
-                        .clearSelection();
-
-                lblEstado.setText(
-                        "Producto eliminado correctamente."
-                );
-
-            } else {
-
-                mostrarError(
-                        "No se pudo eliminar el producto."
-                );
-            }
-        }
-    }
+    private FilteredList<Producto> productosFiltrados;
 
 
     @FXML
@@ -229,27 +122,81 @@ public class ProductoController {
     }
 
 
-    private void cargarCategorias() {
 
-        List<Categoria> categorias =
-                categoriaDAO.listar();
+    @FXML
+    private void buscarProducto() {
 
-        cbCategoria.getItems().clear();
+        aplicarFiltros();
+    }
 
-        cbCategoria.getItems().addAll(
-                categorias
+
+    @FXML
+    private void limpiarBusqueda() {
+
+        txtBuscar.clear();
+
+        aplicarFiltros();
+
+        txtBuscar.requestFocus();
+    }
+
+
+    @FXML
+    private void limpiarFiltros() {
+
+        txtBuscar.clear();
+
+        cbFiltroEstado.setValue(
+                "Todos"
         );
 
-        if (categorias.isEmpty()) {
+        cbFiltroCategoria.setValue(
+                "Todas las categorías"
+        );
 
-            lblEstado.setText(
-                    "No hay categorías registradas."
+        aplicarFiltros();
+
+        lblEstado.setText(
+                "Mostrando todos los productos."
+        );
+    }
+
+
+    private void cargarCategorias() {
+
+        try {
+
+            List<Categoria> categorias =
+                    categoriaDAO.listar();
+
+            cbCategoria.getItems().clear();
+
+            cbCategoria.getItems().addAll(
+                    categorias
             );
 
-        } else {
+            if (categorias.isEmpty()) {
 
-            lblEstado.setText(
-                    "Categorías cargadas correctamente."
+                lblEstado.setText(
+                        "No hay categorías registradas."
+                );
+
+            } else {
+
+                lblEstado.setText(
+                        "Categorías cargadas correctamente."
+                );
+            }
+
+        } catch (SQLException e) {
+
+            mostrarError(
+                    "No fue posible cargar las categorías."
+            );
+
+            System.err.println(
+                    "Error al cargar categorías: "
+                            + e.getMessage()
             );
         }
     }
@@ -279,6 +226,7 @@ public class ProductoController {
 
 
         if (resultado.isEmpty()) {
+
             return;
         }
 
@@ -292,12 +240,89 @@ public class ProductoController {
         if (nombre.isEmpty()) {
 
             mostrarAdvertencia(
-                    "Debe ingresar el nombre de la categoría."
+                    "El nombre de la categoría es obligatorio."
             );
 
             return;
         }
 
+
+        try {
+
+            /*
+             * Verificamos directamente en la base de datos
+             * si existe una categoría con el mismo nombre.
+             */
+            if (categoriaDAO.existeNombre(nombre)) {
+
+                mostrarAdvertencia(
+                        "Ya existe una categoría con ese nombre."
+                );
+
+                seleccionarCategoriaPorNombre(
+                        nombre
+                );
+
+                return;
+            }
+
+
+            Categoria nuevaCategoria =
+                    new Categoria();
+
+            nuevaCategoria.setNombre(
+                    nombre
+            );
+
+            nuevaCategoria.setActiva(
+                    true
+            );
+
+
+            boolean guardada =
+                    categoriaDAO.guardar(
+                            nuevaCategoria
+                    );
+
+
+            if (guardada) {
+
+                cargarCategorias();
+
+                seleccionarCategoriaPorId(
+                        nuevaCategoria.getId()
+                );
+
+                actualizarCategoriasFiltro();
+
+                lblEstado.setText(
+                        "Categoría agregada correctamente."
+                );
+
+            } else {
+
+                mostrarError(
+                        "No se pudo guardar la categoría."
+                );
+            }
+
+        } catch (SQLException e) {
+
+            mostrarError(
+                    "No fue posible registrar la categoría."
+            );
+
+            System.err.println(
+                    "Error al guardar categoría: "
+                            + e.getMessage()
+            );
+        }
+    }
+
+
+    private void seleccionarCategoriaPorNombre(
+            String nombre
+    ) {
 
         for (Categoria categoria :
                 cbCategoria.getItems()) {
@@ -306,9 +331,33 @@ public class ProductoController {
                     .getNombre()
                     .equalsIgnoreCase(nombre)) {
 
-                mostrarAdvertencia(
-                        "La categoría ya existe."
+                cbCategoria.setValue(
+                        categoria
                 );
+
+                return;
+            }
+        }
+    }
+
+
+    private void seleccionarCategoriaPorId(
+            Integer id
+    ) {
+
+        if (id == null) {
+
+            return;
+        }
+
+
+        for (Categoria categoria :
+                cbCategoria.getItems()) {
+
+            if (categoria.getId() != null
+                    && categoria
+                    .getId()
+                    .equals(id)) {
 
                 cbCategoria.setValue(
                         categoria
@@ -317,66 +366,16 @@ public class ProductoController {
                 return;
             }
         }
-
-
-        Categoria nuevaCategoria =
-                new Categoria();
-
-        nuevaCategoria.setNombre(
-                nombre
-        );
-
-        nuevaCategoria.setActiva(
-                true
-        );
-
-
-        boolean guardada =
-                categoriaDAO.guardar(
-                        nuevaCategoria
-                );
-
-
-        if (guardada) {
-
-            cargarCategorias();
-
-
-            for (Categoria categoria :
-                    cbCategoria.getItems()) {
-
-                if (categoria
-                        .getId()
-                        .equals(
-                                nuevaCategoria.getId()
-                        )) {
-
-                    cbCategoria.setValue(
-                            categoria
-                    );
-
-                    break;
-                }
-            }
-
-
-            lblEstado.setText(
-                    "Categoría agregada correctamente."
-            );
-
-        } else {
-
-            mostrarError(
-                    "No se pudo guardar la categoría."
-            );
-        }
     }
+
+
 
 
     @FXML
     private void guardarProducto() {
 
         if (!validarFormulario()) {
+
             return;
         }
 
@@ -439,13 +438,6 @@ public class ProductoController {
                     existencia
             );
 
-            /*
-             * Ya no estamos trabajando
-             * con selección de imágenes.
-             */
-            producto.setRutaImagen(
-                    null
-            );
 
             producto.setActivo(
                     activo
@@ -464,7 +456,6 @@ public class ProductoController {
                         new Alert(
                                 Alert.AlertType.INFORMATION
                         );
-
 
                 alerta.setTitle(
                         "Producto guardado"
@@ -486,6 +477,7 @@ public class ProductoController {
                 lblEstado.setText(
                         "Producto guardado correctamente."
                 );
+
                 cargarProductos();
 
                 limpiarFormulario();
@@ -545,6 +537,8 @@ public class ProductoController {
                     "Debe seleccionar una categoría."
             );
 
+            cbCategoria.requestFocus();
+
             return false;
         }
 
@@ -588,13 +582,19 @@ public class ProductoController {
                                     .trim()
                     );
 
+            /*
+             * La práctica indica que el precio
+             * debe ser MAYOR que cero.
+             */
             if (precio.compareTo(
                     BigDecimal.ZERO
-            ) < 0) {
+            ) <= 0) {
 
                 mostrarAdvertencia(
-                        "El precio no puede ser negativo."
+                        "El precio de venta debe ser mayor que cero."
                 );
+
+                txtPrecio.requestFocus();
 
                 return false;
             }
@@ -604,6 +604,8 @@ public class ProductoController {
             mostrarAdvertencia(
                     "El precio debe ser un valor numérico."
             );
+
+            txtPrecio.requestFocus();
 
             return false;
         }
@@ -624,6 +626,8 @@ public class ProductoController {
                         "La existencia no puede ser negativa."
                 );
 
+                txtExistencia.requestFocus();
+
                 return false;
             }
 
@@ -633,12 +637,93 @@ public class ProductoController {
                     "La existencia debe ser un número entero."
             );
 
+            txtExistencia.requestFocus();
+
             return false;
         }
 
 
         return true;
     }
+
+
+
+
+    @FXML
+    private void eliminarProducto() {
+
+        Producto seleccionado =
+                tvProductos
+                        .getSelectionModel()
+                        .getSelectedItem();
+
+
+        if (seleccionado == null) {
+
+            mostrarAdvertencia(
+                    "Debe seleccionar un producto para eliminar."
+            );
+
+            return;
+        }
+
+
+        Alert confirmacion =
+                new Alert(
+                        Alert.AlertType.CONFIRMATION
+                );
+
+        confirmacion.setTitle(
+                "Eliminar producto"
+        );
+
+        confirmacion.setHeaderText(
+                "¿Desea eliminar este producto?"
+        );
+
+        confirmacion.setContentText(
+                seleccionado.getCodigo()
+                        + " - "
+                        + seleccionado.getNombre()
+        );
+
+
+        Optional<ButtonType> respuesta =
+                confirmacion.showAndWait();
+
+
+        if (respuesta.isPresent()
+                && respuesta.get()
+                == ButtonType.OK) {
+
+            boolean eliminado =
+                    productoDAO.eliminar(
+                            seleccionado.getId()
+                    );
+
+
+            if (eliminado) {
+
+                cargarProductos();
+
+                tvProductos
+                        .getSelectionModel()
+                        .clearSelection();
+
+                lblEstado.setText(
+                        "Producto eliminado correctamente."
+                );
+
+            } else {
+
+                mostrarError(
+                        "No se pudo eliminar el producto."
+                );
+            }
+        }
+    }
+
+
 
 
     @FXML
@@ -660,12 +745,18 @@ public class ProductoController {
                 true
         );
 
+        tvProductos
+                .getSelectionModel()
+                .clearSelection();
+
         lblEstado.setText(
                 "Formulario limpiado."
         );
 
         txtCodigo.requestFocus();
     }
+
+
 
 
     private void mostrarAdvertencia(
@@ -724,36 +815,53 @@ public class ProductoController {
                 mensaje
         );
     }
+
+
+
     private void configurarTabla() {
 
         colCodigo.setCellValueFactory(
-                new PropertyValueFactory<>("codigo")
+                new PropertyValueFactory<>(
+                        "codigo"
+                )
         );
 
         colNombre.setCellValueFactory(
-                new PropertyValueFactory<>("nombre")
+                new PropertyValueFactory<>(
+                        "nombre"
+                )
         );
 
         colPrecio.setCellValueFactory(
-                new PropertyValueFactory<>("precioVenta")
+                new PropertyValueFactory<>(
+                        "precioVenta"
+                )
         );
 
         colExistencia.setCellValueFactory(
-                new PropertyValueFactory<>("existencia")
+                new PropertyValueFactory<>(
+                        "existencia"
+                )
         );
 
         colActivo.setCellValueFactory(
-                new PropertyValueFactory<>("activo")
+                new PropertyValueFactory<>(
+                        "activo"
+                )
         );
 
         colCategoria.setCellValueFactory(
-                datos -> new javafx.beans.property.SimpleStringProperty(
-                        datos.getValue()
-                                .getCategoria()
-                                .getNombre()
-                )
+                datos ->
+                        new javafx.beans.property.SimpleStringProperty(
+                                datos
+                                        .getValue()
+                                        .getCategoria()
+                                        .getNombre()
+                        )
         );
     }
+
+
 
     private void cargarProductos() {
 
@@ -764,12 +872,10 @@ public class ProductoController {
         );
     }
 
-    private final ObservableList<Producto> productos =
-            FXCollections.observableArrayList();
-
-    private FilteredList<Producto> productosFiltrados;
 
     private void configurarFiltros() {
+
+        cbFiltroEstado.getItems().clear();
 
         cbFiltroEstado.getItems().addAll(
                 "Todos",
@@ -777,23 +883,12 @@ public class ProductoController {
                 "Inactivos"
         );
 
-        cbFiltroEstado.setValue("Todos");
-
-
-        cbFiltroCategoria.getItems().add(
-                "Todas las categorías"
+        cbFiltroEstado.setValue(
+                "Todos"
         );
 
-        for (Categoria categoria : categoriaDAO.listar()) {
 
-            cbFiltroCategoria.getItems().add(
-                    categoria.getNombre()
-            );
-        }
-
-        cbFiltroCategoria.setValue(
-                "Todas las categorías"
-        );
+        actualizarCategoriasFiltro();
 
 
         cbFiltroEstado.setOnAction(
@@ -805,16 +900,21 @@ public class ProductoController {
         );
     }
 
+
     private void aplicarFiltros() {
 
         String texto =
                 txtBuscar
                         .getText()
                         .trim()
-                        .toLowerCase(Locale.ROOT);
+                        .toLowerCase(
+                                Locale.ROOT
+                        );
+
 
         String estado =
                 cbFiltroEstado.getValue();
+
 
         String categoriaSeleccionada =
                 cbFiltroCategoria.getValue();
@@ -823,15 +923,14 @@ public class ProductoController {
         productosFiltrados.setPredicate(
                 producto -> {
 
-                    // -------------------------
-                    // BÚSQUEDA
-                    // -------------------------
 
                     boolean coincideBusqueda;
 
+
                     if (texto.isEmpty()) {
 
-                        coincideBusqueda = true;
+                        coincideBusqueda =
+                                true;
 
                     } else {
 
@@ -839,62 +938,84 @@ public class ProductoController {
                                 producto.getCodigo() == null
                                         ? ""
                                         : producto
-                                          .getCodigo()
-                                          .toLowerCase(Locale.ROOT);
+                                        .getCodigo()
+                                        .toLowerCase(
+                                                Locale.ROOT
+                                        );
+
 
                         String nombre =
                                 producto.getNombre() == null
                                         ? ""
                                         : producto
-                                          .getNombre()
-                                          .toLowerCase(Locale.ROOT);
+                                        .getNombre()
+                                        .toLowerCase(
+                                                Locale.ROOT
+                                        );
 
-                        String categoria = "";
+
+                        String categoria =
+                                "";
+
 
                         if (producto.getCategoria() != null
-                                && producto.getCategoria().getNombre() != null) {
+                                && producto
+                                .getCategoria()
+                                .getNombre() != null) {
 
                             categoria =
                                     producto
                                             .getCategoria()
                                             .getNombre()
-                                            .toLowerCase(Locale.ROOT);
+                                            .toLowerCase(
+                                                    Locale.ROOT
+                                            );
                         }
 
+
                         coincideBusqueda =
-                                codigo.contains(texto)
-                                        || nombre.contains(texto)
-                                        || categoria.contains(texto);
+                                codigo.contains(
+                                        texto
+                                )
+                                        || nombre.contains(
+                                        texto
+                                )
+                                        || categoria.contains(
+                                        texto
+                                );
                     }
 
 
-                    // -------------------------
-                    // ESTADO
-                    // -------------------------
+                    boolean coincideEstado =
+                            true;
 
-                    boolean coincideEstado = true;
 
-                    if ("Activos".equals(estado)) {
+                    if ("Activos".equals(
+                            estado
+                    )) {
 
                         coincideEstado =
                                 producto.isActivo();
 
-                    } else if ("Inactivos".equals(estado)) {
+                    } else if ("Inactivos".equals(
+                            estado
+                    )) {
 
                         coincideEstado =
                                 !producto.isActivo();
                     }
 
 
-                    // -------------------------
-                    // CATEGORÍA
-                    // -------------------------
 
-                    boolean coincideCategoria = true;
+                    boolean coincideCategoria =
+                            true;
+
 
                     if (categoriaSeleccionada != null
                             && !"Todas las categorías"
-                            .equals(categoriaSeleccionada)) {
+                            .equals(
+                                    categoriaSeleccionada
+                            )) {
 
                         coincideCategoria =
                                 producto.getCategoria() != null
@@ -920,37 +1041,73 @@ public class ProductoController {
         );
     }
 
+
     private void actualizarCategoriasFiltro() {
 
         String seleccionActual =
                 cbFiltroCategoria.getValue();
 
-        cbFiltroCategoria.getItems().clear();
 
-        cbFiltroCategoria.getItems().add(
-                "Todas las categorías"
-        );
-
-        for (Categoria categoria : categoriaDAO.listar()) {
-
-            cbFiltroCategoria.getItems().add(
-                    categoria.getNombre()
-            );
-        }
-
-        if (seleccionActual != null
-                && cbFiltroCategoria
+        cbFiltroCategoria
                 .getItems()
-                .contains(seleccionActual)) {
+                .clear();
 
-            cbFiltroCategoria.setValue(
-                    seleccionActual
-            );
 
-        } else {
+        cbFiltroCategoria
+                .getItems()
+                .add(
+                        "Todas las categorías"
+                );
+
+
+        try {
+
+            List<Categoria> categorias =
+                    categoriaDAO.listar();
+
+
+            for (Categoria categoria :
+                    categorias) {
+
+                cbFiltroCategoria
+                        .getItems()
+                        .add(
+                                categoria.getNombre()
+                        );
+            }
+
+
+            if (seleccionActual != null
+                    && cbFiltroCategoria
+                    .getItems()
+                    .contains(
+                            seleccionActual
+                    )) {
+
+                cbFiltroCategoria.setValue(
+                        seleccionActual
+                );
+
+            } else {
+
+                cbFiltroCategoria.setValue(
+                        "Todas las categorías"
+                );
+            }
+
+        } catch (SQLException e) {
 
             cbFiltroCategoria.setValue(
                     "Todas las categorías"
+            );
+
+            mostrarError(
+                    "No fue posible cargar las categorías del filtro."
+            );
+
+            System.err.println(
+                    "Error al cargar categorías del filtro: "
+                            + e.getMessage()
             );
         }
     }
